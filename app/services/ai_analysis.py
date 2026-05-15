@@ -138,7 +138,7 @@ Based on this REAL data, provide your comprehensive risk and probability analysi
         }
 
         body = {
-            "model": "claude-sonnet-4-20250514",
+            "model": "claude-sonnet-4-5",
             "max_tokens": 4000,
             "system": SYSTEM_PROMPT,
             "messages": [{"role": "user", "content": prompt}]
