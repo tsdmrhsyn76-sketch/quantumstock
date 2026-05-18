@@ -176,4 +176,115 @@ NVDA:{name:"NVIDIA",sector:"AI Infrastructure",score:92,day:"+1.8%",price:"$924.
 MSFT:{name:"Microsoft",sector:"Enterprise AI",score:88,day:"+0.7%",price:"$421.50",beta:"0.89",sharpe:"1.54",drawdown:"-6.8%",var95:"-1.72%",reason:"Durable enterprise cash flow, AI distribution advantage, and lower balance sheet risk.",signals:[["Momentum","Bullish",80],["Quality","Excellent",91],["Valuation","Premium",54],["Volatility","Controlled",78]],bars:[66,71,69,48],backtest:[28,36,45,48,54,59,62,66,70,74,78,82],stats:["17.1%","67%","5Y"],alert:"Risk note: multiple expansion depends on AI revenue conversion."},
 AAPL:{name:"Apple",sector:"Quality Compounder",score:74,day:"-0.2%",price:"$189.98",beta:"1.12",sharpe:"1.18",drawdown:"-10.1%",var95:"-2.01%",reason:"Exceptional quality and buybacks, offset by slower growth and China demand uncertainty.",signals:[["Momentum","Neutral",58],["Quality","Excellent",89],["Valuation","Fair",61],["Volatility","Controlled",73]],bars:[58,52,61,43],backtest:[42,39,45,48,47,53,56,58,62,61,65,68],stats:["11.8%","57%","5Y"],alert:"Demand risk: hardware cycle and China exposure remain key watch items."},
 AMZN:{name:"Amazon",sector:"Margin Expansion",score:81,day:"+0.5%",price:"$185.12",beta:"1.24",sharpe:"1.31",drawdown:"-11.7%",var95:"-2.28%",reason:"Improving retail margins and AWS AI demand support a constructive medium-term setup.",signals:[["Momentum","Bullish",74],["Quality","Improving",76],["Valuation","Reasonable",68],["Volatility","Medium",65]],bars:[63,67,72,52],backtest:[30,34,40,46,51,57,61,67,66,73,75,80],stats:["15.9%","60%","5Y"],alert:"Execution risk: retail margin expansion must persist through consumer softness."},
-LLY:{name:"Eli Lilly",sector:"Defensive Growth",score:79,day:"+0.3%",price:"$772.40",beta:"0.42",sharpe:"1.47",drawdown:"-7.2%",var95:"-1.44%",reason:"Powerful obesity drug cycle
+LLY:{name:"Eli Lilly",sector:"Defensive Growth",score:79,day:"+0.3%",price:"$772.40",beta:"0.42",sharpe:"1.47",drawdown:"-7.2%",var95:"-1.44%",reason:"Powerful obesity drug cycle with defensive characteristics, tempered by valuation sensitivity.",signals:[["Momentum","Strong",83],["Quality","High",84],["Valuation","Expensive",44],["Volatility","Low",81]],bars:[55,69,64,46],backtest:[32,38,41,49,55,60,68,70,75,77,83,86],stats:["19.2%","62%","5Y"],alert:"Valuation risk: expectations are high around GLP-1 growth durability."}
+};
+
+const macro=[
+["S&P 500","5,308.14","+0.42%"],
+["Nasdaq 100","18,641.9","+0.61%"],
+["10Y Treasury","4.37%","-3 bps"],
+["VIX","13.8","-1.9%"]
+];
+
+let current="NVDA";
+
+function $(id){
+return document.getElementById(id);
+}
+
+function render(ticker){
+const s=stocks[ticker]||stocks.NVDA;
+current=ticker;
+
+$("tickerInput").value=ticker;
+$("sectorBadge").textContent=s.sector;
+$("heroTitle").textContent=`${ticker}: ${s.name} institutional signal view`;
+$("heroText").textContent=s.reason;
+
+$("scoreTitle").textContent=`${ticker} Composite Score`;
+$("scoreValue").textContent=s.score;
+$("scoreReason").textContent=s.reason;
+$("statusText").textContent=`${s.price} · ${s.day}`;
+
+$("marketGrid").innerHTML=macro.map(m=>`
+<div class="metric">
+<span>${m[0]}</span>
+<strong>${m[1]}</strong>
+<em>${m[2]}</em>
+</div>
+`).join("");
+
+const labels=["Liquidity Conditions","Earnings Revision Breadth","Risk Appetite","Sector Dispersion"];
+
+$("marketBars").innerHTML=s.bars.map((v,i)=>`
+<div class="barRow">
+<div>
+<span>${labels[i]}</span>
+<b>${v}%</b>
+</div>
+<i style="width:${v}%"></i>
+</div>
+`).join("");
+
+$("signalList").innerHTML=s.signals.map(x=>`
+<div>
+<span>
+<b>${x[0]}</b>
+<small>${x[1]}</small>
+</span>
+<strong>${x[2]}</strong>
+</div>
+`).join("");
+
+$("riskGrid").innerHTML=[
+["Beta",s.beta],
+["Sharpe",s.sharpe],
+["Max Drawdown",s.drawdown],
+["VaR 95",s.var95]
+].map(x=>`
+<div>
+<span>${x[0]}</span>
+<strong>${x[1]}</strong>
+</div>
+`).join("");
+
+$("riskAlert").textContent=s.alert;
+
+$("chart").innerHTML=s.backtest.map(h=>`
+<span style="height:${h}%"></span>
+`).join("");
+
+$("stats").innerHTML=[
+["CAGR",s.stats[0]],
+["Win Rate",s.stats[1]],
+["Horizon",s.stats[2]]
+].map(x=>`
+<span>${x[0]} <b>${x[1]}</b></span>
+`).join("");
+
+$("watchlist").innerHTML=Object.entries(stocks)
+.sort((a,b)=>b[1].score-a[1].score)
+.map(([k,v])=>`
+<tr class="${k===ticker?"active":""}" onclick="render('${k}')">
+<td>${k}</td>
+<td>${v.sector}</td>
+<td>${v.score}</td>
+<td class="${v.day.startsWith("+")?"up":"down"}">${v.day}</td>
+</tr>
+`).join("");
+}
+
+$("searchForm").addEventListener("submit",e=>{
+e.preventDefault();
+const ticker=$("tickerInput").value.trim().toUpperCase();
+if(stocks[ticker]){
+render(ticker);
+}else{
+alert("Bu prototipte şu tickerlar var: "+Object.keys(stocks).join(", "));
+}
+});
+
+render(current);
+</script>
+</body>
+</html>
