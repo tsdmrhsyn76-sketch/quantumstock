@@ -93,6 +93,27 @@ type WeeklyReport = {
   top_idea?: OpportunityRow;
 };
 
+type CompanyProfile = {
+  ticker: string;
+  company_name: string;
+  sector: string;
+  industry: string;
+  website: string;
+  market_cap_display: string;
+  beta?: number | null;
+  trailing_pe?: number | null;
+  forward_pe?: number | null;
+  profit_margins?: number | null;
+  revenue_growth?: number | null;
+  target_mean_price?: number | null;
+  upside_to_target_percent?: number | null;
+  recommendation: string;
+  analyst_count?: number | null;
+  earnings_dates: string[];
+  officers: { name: string; title: string }[];
+  business_summary: string;
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const fallbackWatchlist: WatchlistRow[] = [
@@ -122,6 +143,9 @@ const formatCurrency = (value?: number) =>
 
 const formatNumber = (value?: number) =>
   typeof value === "number" ? new Intl.NumberFormat("en-US").format(value) : "--";
+
+const formatPercent = (value?: number | null) =>
+  typeof value === "number" ? `${(value * 100).toFixed(1)}%` : "--";
 
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -193,6 +217,9 @@ export default function Home() {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsError, setNewsError] = useState("");
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState("");
   const [watchlistLoading, setWatchlistLoading] = useState(false);
   const [watchlistError, setWatchlistError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -343,32 +370,52 @@ export default function Home() {
   useEffect(() => {
     let ignore = false;
 
-    async function loadNews() {
+    async function loadSelectedTickerContext() {
       setNewsLoading(true);
+      setProfileLoading(true);
       setNewsError("");
+      setProfileError("");
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/news?ticker=${selectedTicker}&limit=6`);
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.detail || "News fetch failed.");
-        }
+        const [newsResponse, profileResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/news?ticker=${selectedTicker}&limit=6`),
+          fetch(`${API_BASE_URL}/api/company-profile?ticker=${selectedTicker}`),
+        ]);
+        const newsData = await newsResponse.json();
+        const profileData = await profileResponse.json();
+
         if (!ignore) {
-          setNewsItems(data.items ?? []);
+          if (newsResponse.ok) {
+            setNewsItems(newsData.items ?? []);
+          } else {
+            setNewsItems([]);
+            setNewsError(newsData.detail || "News fetch failed.");
+          }
+
+          if (profileResponse.ok) {
+            setCompanyProfile(profileData);
+          } else {
+            setCompanyProfile(null);
+            setProfileError(profileData.detail || "Company profile failed.");
+          }
         }
       } catch (err) {
         if (!ignore) {
           setNewsItems([]);
-          setNewsError(err instanceof Error ? err.message : "News fetch failed.");
+          setCompanyProfile(null);
+          const message = err instanceof Error ? err.message : "Selected ticker context failed.";
+          setNewsError(message);
+          setProfileError(message);
         }
       } finally {
         if (!ignore) {
           setNewsLoading(false);
+          setProfileLoading(false);
         }
       }
     }
 
-    loadNews();
+    loadSelectedTickerContext();
     return () => {
       ignore = true;
     };
@@ -638,6 +685,64 @@ export default function Home() {
               <span>RSI {result?.rsi ?? "61.8"}</span>
               <span>MACD {result?.macd?.value ?? "1.42"}</span>
               <span>VOL {result ? `${result.volatility}%` : "24.6%"}</span>
+            </div>
+            <div className="companyPanel">
+              <div className="panelHead compact">
+                <p className="eyebrow">Company Intelligence</p>
+                <span>{profileLoading ? "Loading" : companyProfile?.sector ?? "Profile"}</span>
+              </div>
+              {profileError ? <p className="watchError">{profileError}</p> : null}
+              {companyProfile ? (
+                <>
+                  <h3>{companyProfile.company_name}</h3>
+                  <p>{companyProfile.industry}</p>
+                  <div className="profileGrid">
+                    <span>
+                      Market Cap
+                      <b>{companyProfile.market_cap_display}</b>
+                    </span>
+                    <span>
+                      Forward P/E
+                      <b>{companyProfile.forward_pe ?? "--"}</b>
+                    </span>
+                    <span>
+                      Beta
+                      <b>{companyProfile.beta ?? "--"}</b>
+                    </span>
+                    <span>
+                      Rev Growth
+                      <b>{formatPercent(companyProfile.revenue_growth)}</b>
+                    </span>
+                    <span>
+                      Profit Margin
+                      <b>{formatPercent(companyProfile.profit_margins)}</b>
+                    </span>
+                    <span>
+                      Analyst Target
+                      <b>{formatCurrency(companyProfile.target_mean_price ?? undefined)}</b>
+                    </span>
+                  </div>
+                  <div className="eventStrip">
+                    <span>Recommendation: {companyProfile.recommendation.toUpperCase()}</span>
+                    <span>
+                      Earnings: {companyProfile.earnings_dates.length ? companyProfile.earnings_dates.join(" / ") : "N/A"}
+                    </span>
+                  </div>
+                  {companyProfile.officers.length ? (
+                    <div className="officerList">
+                      {companyProfile.officers.slice(0, 3).map((officer) => (
+                        <span key={`${officer.name}-${officer.title}`}>
+                          <b>{officer.name}</b>
+                          {officer.title}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  <p className="businessSummary">{companyProfile.business_summary}</p>
+                </>
+              ) : !profileLoading && !profileError ? (
+                <p className="emptyState">Company profile will appear after the backend returns fundamentals.</p>
+              ) : null}
             </div>
             <div className="newsPanel">
               <div className="panelHead compact">

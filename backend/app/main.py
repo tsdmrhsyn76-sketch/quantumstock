@@ -245,6 +245,123 @@ def _fetch_news_items(ticker: str, limit: int = 8) -> list[dict[str, Any]]:
     return normalized
 
 
+def _safe_info_number(info: dict[str, Any], key: str) -> float | None:
+    value = info.get(key)
+    if value in (None, "None", "N/A"):
+        return None
+    try:
+        if pd.isna(value):
+            return None
+        return round(float(value), 2)
+    except (TypeError, ValueError):
+        return None
+
+
+def _format_market_cap(value: float | None) -> str:
+    if value is None:
+        return "N/A"
+    if value >= 1_000_000_000_000:
+        return f"${value / 1_000_000_000_000:.2f}T"
+    if value >= 1_000_000_000:
+        return f"${value / 1_000_000_000:.2f}B"
+    if value >= 1_000_000:
+        return f"${value / 1_000_000:.2f}M"
+    return f"${value:,.0f}"
+
+
+def _normalize_earnings_dates(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple, set)):
+        raw_values = list(value)
+    else:
+        raw_values = [value]
+
+    dates: list[str] = []
+    for item in raw_values:
+        if item is None:
+            continue
+        try:
+            parsed = pd.Timestamp(item)
+            if pd.isna(parsed):
+                continue
+            dates.append(parsed.date().isoformat())
+        except (TypeError, ValueError):
+            continue
+    return dates[:2]
+
+
+def _fetch_company_profile(ticker: str) -> dict[str, Any]:
+    stock = yf.Ticker(ticker)
+    try:
+        info = stock.get_info()
+    except Exception:
+        info = {}
+
+    if not info:
+        try:
+            info = stock.info
+        except Exception:
+            info = {}
+
+    if not info:
+        raise HTTPException(status_code=404, detail=f"No company profile found for {ticker}.")
+
+    earnings_dates = _normalize_earnings_dates(info.get("earningsDate"))
+    if not earnings_dates:
+        try:
+            calendar = stock.calendar
+            if isinstance(calendar, pd.DataFrame) and not calendar.empty:
+                earnings_dates = _normalize_earnings_dates(calendar.loc["Earnings Date"].dropna().tolist())
+            elif isinstance(calendar, dict):
+                earnings_dates = _normalize_earnings_dates(calendar.get("Earnings Date") or calendar.get("EarningsDate"))
+        except Exception:
+            earnings_dates = []
+
+    officers = []
+    for officer in info.get("companyOfficers", [])[:4]:
+        if not isinstance(officer, dict):
+            continue
+        name = officer.get("name")
+        title = officer.get("title")
+        if name and title:
+            officers.append({"name": name, "title": title})
+
+    long_summary = str(info.get("longBusinessSummary") or "")
+    if len(long_summary) > 520:
+        long_summary = f"{long_summary[:520].rsplit(' ', 1)[0]}..."
+
+    market_cap = _safe_info_number(info, "marketCap")
+    current_price = _safe_info_number(info, "currentPrice") or _safe_info_number(info, "regularMarketPrice")
+    target_mean_price = _safe_info_number(info, "targetMeanPrice")
+    upside_to_target = None
+    if current_price and target_mean_price:
+        upside_to_target = round(((target_mean_price / current_price) - 1) * 100, 2)
+
+    return {
+        "ticker": ticker,
+        "company_name": info.get("longName") or info.get("shortName") or ticker,
+        "sector": info.get("sector") or "N/A",
+        "industry": info.get("industry") or "N/A",
+        "website": info.get("website") or "",
+        "market_cap": market_cap,
+        "market_cap_display": _format_market_cap(market_cap),
+        "beta": _safe_info_number(info, "beta"),
+        "trailing_pe": _safe_info_number(info, "trailingPE"),
+        "forward_pe": _safe_info_number(info, "forwardPE"),
+        "profit_margins": _safe_info_number(info, "profitMargins"),
+        "revenue_growth": _safe_info_number(info, "revenueGrowth"),
+        "target_mean_price": target_mean_price,
+        "upside_to_target_percent": upside_to_target,
+        "recommendation": info.get("recommendationKey") or "N/A",
+        "analyst_count": info.get("numberOfAnalystOpinions"),
+        "earnings_dates": earnings_dates,
+        "officers": officers,
+        "business_summary": long_summary,
+        "disclaimer": "Company profile data is provided for research context only. Not financial advice.",
+    }
+
+
 def _calculate_rsi(close: pd.Series, window: int = 14) -> pd.Series:
     delta = close.diff()
     gain = delta.clip(lower=0)
@@ -701,6 +818,17 @@ def news(ticker: str = Query(..., min_length=1, max_length=12), limit: int = Que
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"News fetch failed for {symbol}: {exc}") from exc
+
+
+@app.get("/api/company-profile")
+def company_profile(ticker: str = Query(..., min_length=1, max_length=12)) -> dict[str, Any]:
+    symbol = ticker.strip().upper()
+    try:
+        return _fetch_company_profile(symbol)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Company profile failed for {symbol}: {exc}") from exc
 
 
 @app.get("/api/watchlist")

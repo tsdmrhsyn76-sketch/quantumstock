@@ -545,6 +545,77 @@ h2 {
   gap: 7px;
 }
 
+.companyPanel h3 {
+  color: #f8fafc;
+  font-size: 15px;
+  margin: 0;
+}
+
+.companyPanel > p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 6px 0 0;
+}
+
+.profileGrid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.profileGrid span {
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--muted);
+  display: grid;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  padding: 8px;
+  text-transform: uppercase;
+}
+
+.profileGrid b {
+  color: #e5e7eb;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.eventStrip,
+.officerList {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.eventStrip span,
+.officerList span {
+  border: 1px solid var(--line);
+  color: #cbd5e1;
+  font-size: 11px;
+  line-height: 1.35;
+  padding: 8px;
+}
+
+.officerList b {
+  color: #f8fafc;
+  display: block;
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+
+.businessSummary {
+  border-top: 1px solid var(--line);
+  color: #94a3b8 !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+  margin-top: 10px !important;
+  padding-top: 10px;
+}
+
 .newsList a {
   border: 1px solid var(--line);
   background: rgba(0, 0, 0, 0.2);
