@@ -498,6 +498,180 @@ def _build_research_reason(analysis: dict[str, Any]) -> str:
     )
 
 
+def _score_catalysts(news_items: list[dict[str, Any]]) -> dict[str, Any]:
+    if not news_items:
+        return {
+            "catalyst_score": 42,
+            "catalyst_count": 0,
+            "top_headline": "No recent catalyst headlines returned.",
+            "catalyst_types": [],
+        }
+
+    positive_terms = (
+        "beat",
+        "upgrade",
+        "raises",
+        "partnership",
+        "contract",
+        "launch",
+        "growth",
+        "record",
+        "approved",
+        "expands",
+    )
+    risk_terms = (
+        "downgrade",
+        "miss",
+        "lawsuit",
+        "probe",
+        "cuts",
+        "warning",
+        "recall",
+        "delay",
+        "falls",
+        "slumps",
+    )
+
+    score = 50
+    catalyst_types: list[str] = []
+    for item in news_items[:6]:
+        title = f"{item.get('title', '')} {item.get('summary', '')}".lower()
+        catalyst_type = str(item.get("catalyst_type", "Market"))
+        if catalyst_type not in catalyst_types:
+            catalyst_types.append(catalyst_type)
+        if any(term in title for term in positive_terms):
+            score += 9
+        if any(term in title for term in risk_terms):
+            score -= 11
+        if catalyst_type in {"Earnings", "Deal", "Product"}:
+            score += 4
+
+    return {
+        "catalyst_score": _bounded(score),
+        "catalyst_count": len(news_items),
+        "top_headline": news_items[0].get("title", "Recent catalyst detected."),
+        "catalyst_types": catalyst_types[:4],
+    }
+
+
+def _parse_symbols(tickers: str, max_symbols: int) -> list[str]:
+    symbols: list[str] = []
+    for item in tickers.split(","):
+        symbol = item.strip().upper()
+        if symbol and symbol not in symbols:
+            symbols.append(symbol)
+    return symbols[:max_symbols]
+
+
+def _rank_opportunities(symbols: list[str], limit: int, include_news: bool = True) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    candidates: list[dict[str, Any]] = []
+    errors: list[dict[str, str]] = []
+
+    for symbol in symbols[:24]:
+        try:
+            analysis = _analyze_symbol(symbol)
+            news_items = _fetch_news_items(symbol, 4) if include_news else []
+            catalyst_pack = _score_catalysts(news_items)
+            quality_score = _bounded(
+                analysis["opportunity_score"] * 0.44
+                + min(analysis["risk_reward_ratio"], 4) * 7
+                + max(analysis["expected_upside_percent"], 0) * 1.05
+                + analysis["volume_score"] * 0.1
+                + catalyst_pack["catalyst_score"] * 0.18
+            )
+            candidates.append(
+                {
+                    "rank": 0,
+                    "ticker": analysis["ticker"],
+                    "price": analysis["current_price"],
+                    "daily_change_percent": analysis["daily_change_percent"],
+                    "opportunity_score": analysis["opportunity_score"],
+                    "quality_score": quality_score,
+                    "signal": analysis["signal"],
+                    "expected_upside_percent": analysis["expected_upside_percent"],
+                    "risk_level": analysis["risk_level"],
+                    "risk_reward_ratio": analysis["risk_reward_ratio"],
+                    "entry_zone": analysis["entry_zone"],
+                    "stop_loss": analysis["stop_loss"],
+                    "target_1": analysis["target_1"],
+                    "target_2": analysis["target_2"],
+                    "catalyst": _build_catalyst_note(analysis),
+                    "catalyst_score": catalyst_pack["catalyst_score"],
+                    "catalyst_count": catalyst_pack["catalyst_count"],
+                    "catalyst_types": catalyst_pack["catalyst_types"],
+                    "top_headline": catalyst_pack["top_headline"],
+                    "reason": _build_research_reason(analysis),
+                    "warnings": analysis["warnings"],
+                }
+            )
+        except Exception as exc:
+            errors.append({"ticker": symbol, "detail": str(exc)})
+
+    ranked = sorted(
+        candidates,
+        key=lambda item: (
+            item["quality_score"],
+            item["opportunity_score"],
+            item["catalyst_score"],
+            item["expected_upside_percent"],
+        ),
+        reverse=True,
+    )[:limit]
+
+    for index, item in enumerate(ranked, start=1):
+        item["rank"] = index
+
+    return ranked, errors
+
+
+def _build_market_regime() -> dict[str, Any]:
+    symbols = ["SPY", "QQQ", "^VIX"]
+    regime: dict[str, Any] = {
+        "label": "Mixed market",
+        "risk_state": "Neutral",
+        "summary": "Market regime could not be fully calculated, so the scanner remains stock-specific.",
+        "signals": [],
+    }
+
+    try:
+        spy = _analyze_symbol("SPY")
+        qqq = _analyze_symbol("QQQ")
+        vix_history = _download_history("^VIX", "3mo")
+        vix_level = _as_float(vix_history["Close"].iloc[-1], fallback=18)
+        bullish_count = sum(
+            [
+                spy["current_price"] > spy["moving_averages"]["ma50"],
+                spy["current_price"] > spy["moving_averages"]["ma200"],
+                qqq["current_price"] > qqq["moving_averages"]["ma50"],
+                qqq["current_price"] > qqq["moving_averages"]["ma200"],
+            ]
+        )
+
+        if bullish_count >= 3 and vix_level < 20:
+            label = "Risk-on trend"
+            risk_state = "Constructive"
+        elif bullish_count <= 1 or vix_level > 25:
+            label = "Defensive regime"
+            risk_state = "Elevated"
+        else:
+            label = "Selective risk"
+            risk_state = "Neutral"
+
+        regime = {
+            "label": label,
+            "risk_state": risk_state,
+            "vix": vix_level,
+            "spy_score": spy["opportunity_score"],
+            "qqq_score": qqq["opportunity_score"],
+            "summary": f"{label}: SPY score {spy['opportunity_score']}, QQQ score {qqq['opportunity_score']}, VIX {vix_level}.",
+            "signals": symbols,
+        }
+    except Exception:
+        return regime
+
+    return regime
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "healthy", "service": "quantumstock-research-api"}
@@ -582,72 +756,61 @@ def opportunities(
     ),
     limit: int = Query(10, ge=1, le=20),
 ) -> dict[str, Any]:
-    symbols = []
-    for item in tickers.split(","):
-        symbol = item.strip().upper()
-        if symbol and symbol not in symbols:
-            symbols.append(symbol)
+    symbols = _parse_symbols(tickers, 24)
 
     if not symbols:
         raise HTTPException(status_code=400, detail="At least one ticker is required.")
 
-    candidates: list[dict[str, Any]] = []
-    errors: list[dict[str, str]] = []
+    ranked, errors = _rank_opportunities(symbols, limit, include_news=True)
 
-    for symbol in symbols[:24]:
-        try:
-            analysis = _analyze_symbol(symbol)
-            quality_score = _bounded(
-                analysis["opportunity_score"] * 0.5
-                + min(analysis["risk_reward_ratio"], 4) * 8
-                + max(analysis["expected_upside_percent"], 0) * 1.2
-                + analysis["volume_score"] * 0.12
-            )
-            candidates.append(
-                {
-                    "rank": 0,
-                    "ticker": analysis["ticker"],
-                    "price": analysis["current_price"],
-                    "daily_change_percent": analysis["daily_change_percent"],
-                    "opportunity_score": analysis["opportunity_score"],
-                    "quality_score": quality_score,
-                    "signal": analysis["signal"],
-                    "expected_upside_percent": analysis["expected_upside_percent"],
-                    "risk_level": analysis["risk_level"],
-                    "risk_reward_ratio": analysis["risk_reward_ratio"],
-                    "entry_zone": analysis["entry_zone"],
-                    "stop_loss": analysis["stop_loss"],
-                    "target_1": analysis["target_1"],
-                    "target_2": analysis["target_2"],
-                    "catalyst": _build_catalyst_note(analysis),
-                    "reason": _build_research_reason(analysis),
-                    "warnings": analysis["warnings"],
-                }
-            )
-        except Exception as exc:
-            errors.append({"ticker": symbol, "detail": str(exc)})
-
-    if not candidates:
+    if not ranked:
         raise HTTPException(status_code=404, detail="No opportunity candidates could be loaded.")
-
-    ranked = sorted(
-        candidates,
-        key=lambda item: (
-            item["quality_score"],
-            item["opportunity_score"],
-            item["expected_upside_percent"],
-        ),
-        reverse=True,
-    )[:limit]
-
-    for index, item in enumerate(ranked, start=1):
-        item["rank"] = index
 
     return {
         "universe": symbols,
         "generated_at": datetime.now(UTC).isoformat(),
-        "methodology": "Ranks equities by opportunity score, risk/reward, upside to target, and volume confirmation.",
+        "methodology": "Ranks equities by opportunity score, catalyst score, risk/reward, upside to target, and volume confirmation.",
         "results": ranked,
         "errors": errors,
+        "disclaimer": "For research and educational purposes only. Not financial advice.",
+    }
+
+
+@app.get("/api/weekly-report")
+def weekly_report(
+    tickers: str = Query(
+        "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX",
+        min_length=1,
+        max_length=240,
+    ),
+    limit: int = Query(10, ge=1, le=20),
+) -> dict[str, Any]:
+    symbols = _parse_symbols(tickers, 24)
+    if not symbols:
+        raise HTTPException(status_code=400, detail="At least one ticker is required.")
+
+    ranked, errors = _rank_opportunities(symbols, limit, include_news=True)
+    if not ranked:
+        raise HTTPException(status_code=404, detail="No weekly opportunity candidates could be loaded.")
+
+    market_regime = _build_market_regime()
+    top = ranked[0]
+    risk_names = [item["ticker"] for item in ranked if item["risk_level"] == "HIGH"][:3]
+    catalyst_names = [item["ticker"] for item in ranked if item["catalyst_score"] >= 65][:3]
+
+    return {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "universe": symbols,
+        "market_regime": market_regime,
+        "summary": (
+            f"{top['ticker']} leads this weekly scan with a {top['quality_score']}/100 blended quality score. "
+            f"The report blends technical opportunity, risk/reward, volume confirmation, and recent catalyst tone."
+        ),
+        "top_idea": top,
+        "catalyst_focus": catalyst_names,
+        "risk_watch": risk_names,
+        "results": ranked,
+        "errors": errors,
+        "methodology": "Blended weekly score = technical opportunity + catalyst tone + risk/reward + upside + volume confirmation.",
         "disclaimer": "For research and educational purposes only. Not financial advice.",
     }

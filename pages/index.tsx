@@ -60,6 +60,10 @@ type OpportunityRow = {
   entry_zone: { low: number; high: number };
   target_1: number;
   catalyst: string;
+  catalyst_score: number;
+  catalyst_count: number;
+  catalyst_types: string[];
+  top_headline: string;
   reason: string;
 };
 
@@ -70,6 +74,23 @@ type NewsItem = {
   published_at?: string | null;
   summary?: string;
   catalyst_type: string;
+};
+
+type WeeklyReport = {
+  generated_at: string;
+  summary: string;
+  methodology: string;
+  catalyst_focus: string[];
+  risk_watch: string[];
+  market_regime: {
+    label: string;
+    risk_state: string;
+    summary: string;
+    vix?: number;
+    spy_score?: number;
+    qqq_score?: number;
+  };
+  top_idea?: OpportunityRow;
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -166,6 +187,7 @@ export default function Home() {
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [liveWatchlist, setLiveWatchlist] = useState<WatchlistRow[]>(fallbackWatchlist);
   const [opportunities, setOpportunities] = useState<OpportunityRow[]>([]);
+  const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
   const [opportunitiesLoading, setOpportunitiesLoading] = useState(false);
   const [opportunitiesError, setOpportunitiesError] = useState("");
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
@@ -291,17 +313,19 @@ export default function Home() {
 
       try {
         const symbols = "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX";
-        const response = await fetch(`${API_BASE_URL}/api/opportunities?tickers=${symbols}&limit=10`);
+        const response = await fetch(`${API_BASE_URL}/api/weekly-report?tickers=${symbols}&limit=10`);
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.detail || "Opportunity scan failed.");
+          throw new Error(data.detail || "Weekly report scan failed.");
         }
         if (!ignore) {
           setOpportunities(data.results ?? []);
+          setWeeklyReport(data);
         }
       } catch (err) {
         if (!ignore) {
-          setOpportunitiesError(err instanceof Error ? err.message : "Opportunity scan failed.");
+          setWeeklyReport(null);
+          setOpportunitiesError(err instanceof Error ? err.message : "Weekly report scan failed.");
         }
       } finally {
         if (!ignore) {
@@ -493,6 +517,34 @@ export default function Home() {
               <MetricTile label="Risk Level" value={riskLevel} sub="Volatility adjusted" />
             </div>
 
+            <div className="panel weeklyBriefPanel">
+              <div className="panelHead">
+                <p className="eyebrow">Weekly Research Brief</p>
+                <span>{opportunitiesLoading ? "Building report" : weeklyReport?.market_regime.label ?? "Awaiting scan"}</span>
+              </div>
+              <div className="briefGrid">
+                <div>
+                  <strong>Market Regime</strong>
+                  <p>{weeklyReport?.market_regime.summary ?? "The weekly scanner will summarize SPY, QQQ, and VIX conditions here."}</p>
+                </div>
+                <div>
+                  <strong>Top Idea</strong>
+                  <p>
+                    {weeklyReport?.top_idea
+                      ? `${weeklyReport.top_idea.ticker} leads with ${weeklyReport.top_idea.quality_score}/100 blended quality and ${weeklyReport.top_idea.catalyst_score}/100 catalyst score.`
+                      : "Top ranked opportunity will appear after the backend finishes scanning."}
+                  </p>
+                </div>
+                <div>
+                  <strong>Focus List</strong>
+                  <p>
+                    Catalyst focus: {weeklyReport?.catalyst_focus?.length ? weeklyReport.catalyst_focus.join(", ") : "None yet"}.
+                    {" "}Risk watch: {weeklyReport?.risk_watch?.length ? weeklyReport.risk_watch.join(", ") : "None flagged"}.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="panel opportunitiesPanel">
               <div className="panelHead">
                 <p className="eyebrow">Weekly Opportunities</p>
@@ -503,11 +555,12 @@ export default function Home() {
                 <div className="opportunityRow head">
                   <span>Rank</span>
                   <span>Ticker</span>
-                  <span>Score</span>
+                  <span>Blend</span>
+                  <span>AI</span>
                   <span>Upside</span>
                   <span>R/R</span>
-                  <span>Risk</span>
-                  <span>Catalyst</span>
+                  <span>Cat</span>
+                  <span>Headline</span>
                 </div>
                 {(opportunities.length ? opportunities : []).map((item) => (
                   <button
@@ -518,13 +571,14 @@ export default function Home() {
                   >
                     <b>#{item.rank}</b>
                     <strong>{item.ticker}</strong>
+                    <span>{item.quality_score}</span>
                     <span>{item.opportunity_score}</span>
                     <span className={item.expected_upside_percent >= 0 ? "up" : "down"}>
                       {item.expected_upside_percent}%
                     </span>
                     <span>{item.risk_reward_ratio}</span>
-                    <em>{item.risk_level}</em>
-                    <small>{item.catalyst}</small>
+                    <em>{item.catalyst_score}</em>
+                    <small>{item.top_headline || item.catalyst}</small>
                   </button>
                 ))}
                 {!opportunities.length && !opportunitiesLoading ? (

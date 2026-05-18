@@ -358,7 +358,7 @@ h2 {
 
 .opportunityRow {
   display: grid;
-  grid-template-columns: 46px 70px 56px 72px 52px 64px minmax(150px, 1fr);
+  grid-template-columns: 46px 70px 58px 48px 72px 52px 52px minmax(220px, 1fr);
   gap: 8px;
   align-items: center;
   width: 100%;
@@ -412,6 +412,36 @@ h2 {
   font-size: 12px;
   margin: 0;
   padding: 10px;
+}
+
+.weeklyBriefPanel {
+  border-color: rgba(56, 189, 248, 0.22);
+}
+
+.briefGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.briefGrid div {
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.22);
+  padding: 10px;
+}
+
+.briefGrid strong {
+  color: #e5e7eb;
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.briefGrid p {
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.52;
+  margin: 8px 0 0;
 }
 
 .metricTile {
@@ -599,7 +629,8 @@ h2 {
 
   .chartGrid,
   .tradeGrid,
-  .factorGrid {
+  .factorGrid,
+  .briefGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -608,6 +639,10 @@ h2 {
   .terminalGrid {
     grid-template-columns: 360px minmax(0, 1fr) 390px;
     align-items: start;
+  }
+
+  .briefGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .watchPanel,
@@ -623,6 +658,6 @@ h2 {
   }
 
   .opportunityRow {
-    min-width: 740px;
+    min-width: 860px;
   }
 }
