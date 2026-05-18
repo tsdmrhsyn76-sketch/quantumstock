@@ -27,6 +27,13 @@ type AnalyzeResult = {
   macd: { value: number; signal: number };
   support: number;
   resistance: number;
+  charts?: {
+    price_history: number[];
+    score_history: number[];
+    momentum_history: number[];
+    volatility_history: number[];
+    backtest_curve: number[];
+  };
   disclaimer: string;
 };
 
@@ -146,14 +153,25 @@ export default function Home() {
   const signal = result?.signal ?? activeRow.signal;
 
   const chartData = useMemo(() => {
+    if (result?.charts) {
+      return {
+        price: result.charts.price_history,
+        ai: result.charts.score_history,
+        momentum: result.charts.momentum_history,
+        volatility: result.charts.volatility_history,
+        backtest: result.charts.backtest_curve,
+      };
+    }
+
     const base = score;
     return {
+      price: [activeRow.price * 0.93, activeRow.price * 0.96, activeRow.price * 0.95, activeRow.price * 0.99, activeRow.price * 1.02, activeRow.price],
       ai: [base - 13, base - 8, base - 10, base - 4, base - 2, base + 1, base],
       momentum: [momentum - 16, momentum - 7, momentum - 10, momentum - 3, momentum + 4, momentum + 1, momentum],
       volatility: [volatility + 5, volatility + 1, volatility + 8, volatility - 2, volatility + 3, volatility - 4, volatility],
       backtest: [100, 103, 106, 104, 111, 116, 123, 128, 126, 134],
     };
-  }, [momentum, score, volatility]);
+  }, [activeRow.price, momentum, result, score, volatility]);
 
   const assistantBullets = useMemo(() => {
     if (!result) {
@@ -377,6 +395,7 @@ export default function Home() {
             </div>
 
             <div className="chartGrid">
+              <MiniChart label="Price History" data={chartData.price} tone="blue" />
               <MiniChart label="AI Score History" data={chartData.ai} tone="amber" />
               <MiniChart label="Momentum Trend" data={chartData.momentum} tone="green" />
               <MiniChart label="Volatility" data={chartData.volatility} tone="red" />

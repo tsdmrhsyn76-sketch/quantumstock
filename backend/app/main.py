@@ -190,6 +190,56 @@ def _bounded(value: float, floor: float = 0, ceiling: float = 100) -> int:
     return int(round(max(floor, min(ceiling, value))))
 
 
+def _compact_series(series: pd.Series, points: int = 24, fallback: float = 0.0) -> list[float]:
+    clean = series.replace([np.inf, -np.inf], np.nan).dropna()
+    if clean.empty:
+        return [round(fallback, 2)] * points
+    if len(clean) <= points:
+        values = clean.tolist()
+    else:
+        indexes = np.linspace(0, len(clean) - 1, points).round().astype(int)
+        values = clean.iloc[indexes].tolist()
+    return [round(float(value), 2) for value in values]
+
+
+def _build_chart_series(history: pd.DataFrame, opportunity: dict[str, Any]) -> dict[str, list[float]]:
+    close = history["Close"]
+    returns = close.pct_change().fillna(0)
+    rsi = _calculate_rsi(close).fillna(50)
+    momentum = close.pct_change(20).fillna(0) * 100
+    volatility = returns.rolling(20).std().fillna(0) * np.sqrt(252) * 100
+    ma50 = close.rolling(50).mean()
+    ma200 = close.rolling(200).mean()
+
+    trend_component = ((close / ma50) - 1).fillna(0) * 220 + 55
+    long_trend_component = ((close / ma200) - 1).fillna(0) * 140 + 50
+    momentum_component = momentum * 2.4 + 50
+    rsi_component = 100 - (rsi - 58).abs() * 1.7
+    score_history = (
+        trend_component.clip(0, 100) * 0.32
+        + long_trend_component.clip(0, 100) * 0.22
+        + momentum_component.clip(0, 100) * 0.24
+        + rsi_component.clip(0, 100) * 0.22
+    )
+
+    signal = (close > ma50).astype(float).fillna(0)
+    strategy_returns = returns * signal.shift(1).fillna(0)
+    backtest_curve = (1 + strategy_returns).cumprod() * 100
+
+    price_history = _compact_series(close.tail(120), points=30, fallback=float(close.iloc[-1]))
+    score_series = _compact_series(score_history.tail(120), points=30, fallback=opportunity["opportunity_score"])
+    if score_series:
+        score_series[-1] = float(opportunity["opportunity_score"])
+
+    return {
+        "price_history": price_history,
+        "score_history": score_series,
+        "momentum_history": _compact_series((momentum + 50).clip(0, 100).tail(120), points=30, fallback=opportunity["momentum_score"]),
+        "volatility_history": _compact_series(volatility.tail(120), points=30, fallback=0),
+        "backtest_curve": _compact_series(backtest_curve.tail(180), points=30, fallback=100),
+    }
+
+
 def _score_opportunity(ind: IndicatorPack) -> dict[str, Any]:
     trend_score = 35
     if ind.current_price > ind.ma50:
@@ -293,6 +343,7 @@ def _analyze_symbol(symbol: str) -> dict[str, Any]:
     history_3mo = _download_history(symbol, "3mo")
     indicators = _calculate_indicators(history_1y, history_3mo)
     opportunity = _score_opportunity(indicators)
+    chart_series = _build_chart_series(history_1y, opportunity)
     close = history_1y["Close"]
     previous_close = _as_float(close.iloc[-2], fallback=indicators.current_price) if len(close) > 1 else indicators.current_price
     daily_change_percent = (
@@ -320,6 +371,7 @@ def _analyze_symbol(symbol: str) -> dict[str, Any]:
         },
         "support": indicators.support,
         "resistance": indicators.resistance,
+        "charts": chart_series,
         **opportunity,
         "disclaimer": "For research and educational purposes only. Not financial advice.",
     }
