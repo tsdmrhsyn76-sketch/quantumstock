@@ -80,6 +80,7 @@ type WeeklyReport = {
   generated_at: string;
   summary: string;
   methodology: string;
+  message?: string | null;
   catalyst_focus: string[];
   risk_watch: string[];
   market_regime: {
@@ -147,6 +148,7 @@ type CommitteeReport = {
   generated_at: string;
   title: string;
   recommended_action: string;
+  message?: string | null;
   sections: { title: string; body: string }[];
   allocation_notes: {
     ticker: string;
@@ -414,6 +416,7 @@ export default function Home() {
           setOpportunities(data.results ?? []);
           setWeeklyReport(data);
           setCommitteeReport(committeeResponse.ok ? committeeData : null);
+          setOpportunitiesError("");
         }
       } catch (err) {
         if (!ignore) {
@@ -749,7 +752,7 @@ export default function Home() {
             <div className="panel opportunitiesPanel">
               <div className="panelHead">
                 <p className="eyebrow">Weekly Opportunities</p>
-                <span>{opportunitiesLoading ? "Scanning universe" : `${opportunities.length || 10} ranked names`}</span>
+                <span>{opportunitiesLoading ? "Scanning universe" : `${opportunities.length} ranked names`}</span>
               </div>
               {opportunitiesError ? <p className="watchError">{opportunitiesError}</p> : null}
               <div className="opportunityTable">
@@ -783,7 +786,10 @@ export default function Home() {
                   </button>
                 ))}
                 {!opportunities.length && !opportunitiesLoading ? (
-                  <p className="emptyState">Run backend scanner to rank this week's opportunity set.</p>
+                  <p className="emptyState">
+                    {weeklyReport?.message ??
+                      "No qualified opportunities under current filters. Lower Min R/R, allow higher risk, or expand the signal filter."}
+                  </p>
                 ) : null}
               </div>
             </div>

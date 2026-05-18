@@ -1188,7 +1188,37 @@ def _build_investment_committee_report(
         max_risk=max_risk,
     )
     if not ranked:
-        raise HTTPException(status_code=404, detail="No investment committee candidates could be loaded.")
+        market_regime = _build_market_regime()
+        return {
+            "generated_at": datetime.now(UTC).isoformat(),
+            "title": "QuantumStock Weekly Investment Committee Report",
+            "universe": symbols,
+            "market_regime": market_regime,
+            "recommended_action": "No allocation candidate qualifies under the current filters",
+            "top_idea": None,
+            "sections": [
+                {
+                    "title": "Executive View",
+                    "body": "No qualified opportunity passed the active screening controls. Loosen filters or expand the ticker universe.",
+                },
+                {
+                    "title": "Risk Controls",
+                    "body": "No trade is preferable to forcing a weak setup. Current controls are excluding low-quality entries.",
+                },
+            ],
+            "allocation_notes": [],
+            "ranked_opportunities": [],
+            "errors": errors,
+            "message": "No qualified opportunities under current filters.",
+            "methodology": "Committee report blends market regime, opportunity score, catalyst tone, risk/reward, and model trade plan.",
+            "filters": {
+                "min_score": min_score,
+                "min_rr": min_risk_reward,
+                "signal": sorted(signals) if signals else "ALL",
+                "max_risk": max_risk,
+            },
+            "disclaimer": "For research and educational purposes only. Not financial advice.",
+        }
 
     market_regime = _build_market_regime()
     top = next(
@@ -1413,15 +1443,13 @@ def opportunities(
         max_risk=max_risk,
     )
 
-    if not ranked:
-        raise HTTPException(status_code=404, detail="No opportunity candidates could be loaded.")
-
     return {
         "universe": symbols,
         "generated_at": datetime.now(UTC).isoformat(),
         "methodology": "Ranks equities by opportunity score, catalyst score, risk/reward, upside to target, and volume confirmation.",
         "filters": {"min_score": min_score, "min_rr": min_rr, "signal": signal, "max_risk": max_risk},
         "results": ranked,
+        "message": None if ranked else "No qualified opportunities under current filters.",
         "errors": errors,
         "disclaimer": "For research and educational purposes only. Not financial advice.",
     }
@@ -1453,11 +1481,8 @@ def weekly_report(
         signals=_parse_signal_filter(signal),
         max_risk=max_risk,
     )
-    if not ranked:
-        raise HTTPException(status_code=404, detail="No weekly opportunity candidates could be loaded.")
-
     market_regime = _build_market_regime()
-    top = ranked[0]
+    top = ranked[0] if ranked else None
     risk_names = [item["ticker"] for item in ranked if item["risk_level"] == "HIGH"][:3]
     catalyst_names = [item["ticker"] for item in ranked if item["catalyst_score"] >= 65][:3]
 
@@ -1468,11 +1493,14 @@ def weekly_report(
         "summary": (
             f"{top['ticker']} leads this weekly scan with a {top['quality_score']}/100 blended quality score. "
             f"The report blends technical opportunity, risk/reward, volume confirmation, and recent catalyst tone."
+            if top
+            else "No qualified opportunities matched the current screening controls."
         ),
         "top_idea": top,
         "catalyst_focus": catalyst_names,
         "risk_watch": risk_names,
         "results": ranked,
+        "message": None if ranked else "No qualified opportunities under current filters.",
         "errors": errors,
         "methodology": "Blended weekly score = technical opportunity + catalyst tone + risk/reward + upside + volume confirmation.",
         "filters": {"min_score": min_score, "min_rr": min_rr, "signal": signal, "max_risk": max_risk},
