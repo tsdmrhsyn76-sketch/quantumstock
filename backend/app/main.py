@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import numpy as np
 import pandas as pd
+import requests
 import yfinance as yf
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -51,7 +53,25 @@ def _as_float(value: Any, fallback: float = 0.0) -> float:
     return round(float(value), 2)
 
 
-def _download_history(ticker: str, period: str) -> pd.DataFrame:
+def _normalize_history(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return frame
+    if isinstance(frame.columns, pd.MultiIndex):
+        frame.columns = frame.columns.get_level_values(0)
+    required_columns = ["Open", "High", "Low", "Close", "Volume"]
+    missing_columns = [column for column in required_columns if column not in frame.columns]
+    if missing_columns:
+        return pd.DataFrame()
+    return frame[required_columns].dropna()
+
+
+def _download_with_yfinance_ticker(ticker: str, period: str) -> pd.DataFrame:
+    stock = yf.Ticker(ticker)
+    frame = stock.history(period=period, interval="1d", auto_adjust=True, actions=False)
+    return _normalize_history(frame)
+
+
+def _download_with_yfinance_download(ticker: str, period: str) -> pd.DataFrame:
     frame = yf.download(
         ticker,
         period=period,
@@ -60,11 +80,68 @@ def _download_history(ticker: str, period: str) -> pd.DataFrame:
         progress=False,
         threads=False,
     )
-    if frame.empty:
-        raise HTTPException(status_code=404, detail=f"No market data found for {ticker}")
-    if isinstance(frame.columns, pd.MultiIndex):
-        frame.columns = frame.columns.get_level_values(0)
-    return frame.dropna()
+    return _normalize_history(frame)
+
+
+def _download_with_yahoo_chart(ticker: str, period: str) -> pd.DataFrame:
+    days = 365 if period == "1y" else 92
+    end = datetime.now(UTC)
+    start = end - timedelta(days=days + 10)
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
+    response = requests.get(
+        url,
+        params={
+            "period1": int(start.timestamp()),
+            "period2": int(end.timestamp()),
+            "interval": "1d",
+            "events": "history",
+            "includeAdjustedClose": "true",
+        },
+        headers={"User-Agent": "QuantumStock Research Terminal/0.1"},
+        timeout=12,
+    )
+    response.raise_for_status()
+    result = response.json()["chart"]["result"]
+    if not result:
+        return pd.DataFrame()
+
+    payload = result[0]
+    timestamps = payload.get("timestamp") or []
+    quote = payload.get("indicators", {}).get("quote", [{}])[0]
+    adjusted = payload.get("indicators", {}).get("adjclose", [{}])[0].get("adjclose")
+    close_values = adjusted or quote.get("close", [])
+
+    frame = pd.DataFrame(
+        {
+            "Open": quote.get("open", []),
+            "High": quote.get("high", []),
+            "Low": quote.get("low", []),
+            "Close": close_values,
+            "Volume": quote.get("volume", []),
+        },
+        index=pd.to_datetime(timestamps, unit="s", utc=True),
+    )
+    return _normalize_history(frame).tail(days)
+
+
+def _download_history(ticker: str, period: str) -> pd.DataFrame:
+    errors: list[str] = []
+    for downloader in (
+        _download_with_yfinance_ticker,
+        _download_with_yfinance_download,
+        _download_with_yahoo_chart,
+    ):
+        try:
+            frame = downloader(ticker, period)
+            if not frame.empty:
+                return frame
+        except Exception as exc:
+            errors.append(f"{downloader.__name__}: {exc}")
+
+    raise HTTPException(
+        status_code=404,
+        detail=f"No market data found for {ticker}. Tried multiple market data methods.",
+    )
 
 
 def _calculate_rsi(close: pd.Series, window: int = 14) -> pd.Series:
