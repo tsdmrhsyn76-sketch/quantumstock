@@ -479,7 +479,12 @@ def _fetch_company_profile(ticker: str) -> dict[str, Any]:
 
     static_info = _static_company_profile(ticker)
     if static_info:
-        info = {**static_info, **{key: value for key, value in info.items() if value not in (None, "", [], "N/A")}}
+        clean_dynamic = {key: value for key, value in info.items() if value not in (None, "", [], "N/A")}
+        info = {**clean_dynamic}
+        for key, value in static_info.items():
+            current = info.get(key)
+            if current in (None, "", [], "N/A", ticker):
+                info[key] = value
 
     if not info:
         raise HTTPException(status_code=404, detail=f"No company profile found for {ticker}.")
@@ -1006,15 +1011,26 @@ def _build_research_memo(symbol: str) -> dict[str, Any]:
     try:
         profile = _fetch_company_profile(symbol)
     except Exception:
+        static_profile = _static_company_profile(symbol)
         profile = {
-            "company_name": symbol,
-            "sector": "N/A",
-            "industry": "N/A",
-            "market_cap_display": "N/A",
+            "company_name": static_profile.get("longName", symbol),
+            "sector": static_profile.get("sector", "N/A"),
+            "industry": static_profile.get("industry", "N/A"),
+            "market_cap_display": _format_market_cap(None),
             "target_mean_price": None,
             "upside_to_target_percent": None,
             "recommendation": "N/A",
             "earnings_dates": [],
+        }
+
+    static_profile = _static_company_profile(symbol)
+    if static_profile and profile.get("company_name") in (None, "", "N/A", symbol):
+        profile = {
+            **profile,
+            "company_name": static_profile.get("longName", symbol),
+            "sector": profile.get("sector") if profile.get("sector") not in (None, "", "N/A") else static_profile.get("sector", "N/A"),
+            "industry": profile.get("industry") if profile.get("industry") not in (None, "", "N/A") else static_profile.get("industry", "N/A"),
+            "business_summary": profile.get("business_summary") or static_profile.get("longBusinessSummary", ""),
         }
 
     horizon = _classify_time_horizon(analysis)
