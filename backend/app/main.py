@@ -359,6 +359,97 @@ def _fetch_yahoo_quote_summary_profile(ticker: str) -> dict[str, Any]:
     return {key: value for key, value in info.items() if value not in (None, "", [])}
 
 
+def _fetch_yahoo_quote_profile(ticker: str) -> dict[str, Any]:
+    response = requests.get(
+        "https://query1.finance.yahoo.com/v7/finance/quote",
+        params={"symbols": ticker},
+        headers={"User-Agent": "QuantumStock Research Terminal/0.1"},
+        timeout=12,
+    )
+    response.raise_for_status()
+    result = response.json().get("quoteResponse", {}).get("result") or []
+    if not result:
+        return {}
+
+    quote = result[0]
+    return {
+        key: value
+        for key, value in {
+            "longName": quote.get("longName"),
+            "shortName": quote.get("shortName"),
+            "marketCap": quote.get("marketCap"),
+            "regularMarketPrice": quote.get("regularMarketPrice"),
+            "trailingPE": quote.get("trailingPE"),
+            "forwardPE": quote.get("forwardPE"),
+            "epsTrailingTwelveMonths": quote.get("epsTrailingTwelveMonths"),
+            "sharesOutstanding": quote.get("sharesOutstanding"),
+        }.items()
+        if value not in (None, "", [])
+    }
+
+
+def _static_company_profile(ticker: str) -> dict[str, Any]:
+    profiles = {
+        "NVDA": {
+            "longName": "NVIDIA Corporation",
+            "sector": "Technology",
+            "industry": "Semiconductors",
+            "website": "https://www.nvidia.com",
+            "longBusinessSummary": "NVIDIA designs accelerated computing platforms, GPUs, networking products, and AI infrastructure used across data centers, gaming, professional visualization, automotive, and robotics markets.",
+        },
+        "MSFT": {
+            "longName": "Microsoft Corporation",
+            "sector": "Technology",
+            "industry": "Software - Infrastructure",
+            "website": "https://www.microsoft.com",
+            "longBusinessSummary": "Microsoft provides cloud, productivity, operating system, gaming, and AI infrastructure products for consumers, enterprises, and developers globally.",
+        },
+        "AAPL": {
+            "longName": "Apple Inc.",
+            "sector": "Technology",
+            "industry": "Consumer Electronics",
+            "website": "https://www.apple.com",
+            "longBusinessSummary": "Apple designs consumer electronics, software, services, and wearables built around its iPhone, Mac, iPad, Apple Watch, and services ecosystem.",
+        },
+        "AMZN": {
+            "longName": "Amazon.com, Inc.",
+            "sector": "Consumer Cyclical",
+            "industry": "Internet Retail",
+            "website": "https://www.amazon.com",
+            "longBusinessSummary": "Amazon operates global e-commerce, cloud computing, advertising, logistics, subscription, and digital media businesses.",
+        },
+        "META": {
+            "longName": "Meta Platforms, Inc.",
+            "sector": "Communication Services",
+            "industry": "Internet Content & Information",
+            "website": "https://about.meta.com",
+            "longBusinessSummary": "Meta builds social, messaging, advertising, AI, and virtual reality products across Facebook, Instagram, WhatsApp, Threads, and Reality Labs.",
+        },
+        "GOOGL": {
+            "longName": "Alphabet Inc.",
+            "sector": "Communication Services",
+            "industry": "Internet Content & Information",
+            "website": "https://abc.xyz",
+            "longBusinessSummary": "Alphabet operates Google Search, YouTube, Android, Google Cloud, advertising products, AI initiatives, and other technology bets.",
+        },
+        "AMD": {
+            "longName": "Advanced Micro Devices, Inc.",
+            "sector": "Technology",
+            "industry": "Semiconductors",
+            "website": "https://www.amd.com",
+            "longBusinessSummary": "AMD designs CPUs, GPUs, adaptive computing products, and AI accelerators for data center, client, gaming, and embedded markets.",
+        },
+        "TSLA": {
+            "longName": "Tesla, Inc.",
+            "sector": "Consumer Cyclical",
+            "industry": "Auto Manufacturers",
+            "website": "https://www.tesla.com",
+            "longBusinessSummary": "Tesla designs electric vehicles, energy generation and storage products, autonomous driving software, and related services.",
+        },
+    }
+    return profiles.get(ticker, {})
+
+
 def _fetch_company_profile(ticker: str) -> dict[str, Any]:
     stock = yf.Ticker(ticker)
     try:
@@ -378,6 +469,17 @@ def _fetch_company_profile(ticker: str) -> dict[str, Any]:
             info = {**info, **fallback_info}
         except Exception:
             pass
+
+    if not info or not (info.get("longName") or info.get("shortName") or info.get("marketCap")):
+        try:
+            quote_info = _fetch_yahoo_quote_profile(ticker)
+            info = {**info, **quote_info}
+        except Exception:
+            pass
+
+    static_info = _static_company_profile(ticker)
+    if static_info:
+        info = {**static_info, **{key: value for key, value in info.items() if value not in (None, "", [], "N/A")}}
 
     if not info:
         raise HTTPException(status_code=404, detail=f"No company profile found for {ticker}.")
