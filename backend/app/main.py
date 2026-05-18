@@ -288,6 +288,43 @@ def _score_opportunity(ind: IndicatorPack) -> dict[str, Any]:
     }
 
 
+def _analyze_symbol(symbol: str) -> dict[str, Any]:
+    history_1y = _download_history(symbol, "1y")
+    history_3mo = _download_history(symbol, "3mo")
+    indicators = _calculate_indicators(history_1y, history_3mo)
+    opportunity = _score_opportunity(indicators)
+    close = history_1y["Close"]
+    previous_close = _as_float(close.iloc[-2], fallback=indicators.current_price) if len(close) > 1 else indicators.current_price
+    daily_change_percent = (
+        round(((indicators.current_price - previous_close) / previous_close) * 100, 2)
+        if previous_close
+        else 0.0
+    )
+
+    return {
+        "ticker": symbol,
+        "current_price": indicators.current_price,
+        "previous_close": previous_close,
+        "daily_change_percent": daily_change_percent,
+        "volume": indicators.volume,
+        "moving_averages": {
+            "ma20": indicators.ma20,
+            "ma50": indicators.ma50,
+            "ma200": indicators.ma200,
+        },
+        "volatility": indicators.volatility_20,
+        "rsi": indicators.rsi,
+        "macd": {
+            "value": indicators.macd,
+            "signal": indicators.macd_signal,
+        },
+        "support": indicators.support,
+        "resistance": indicators.resistance,
+        **opportunity,
+        "disclaimer": "For research and educational purposes only. Not financial advice.",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "healthy", "service": "quantumstock-research-api"}
@@ -297,31 +334,52 @@ def health() -> dict[str, str]:
 def analyze(ticker: str = Query(..., min_length=1, max_length=12)) -> dict[str, Any]:
     symbol = ticker.strip().upper()
     try:
-        history_1y = _download_history(symbol, "1y")
-        history_3mo = _download_history(symbol, "3mo")
-        indicators = _calculate_indicators(history_1y, history_3mo)
-        opportunity = _score_opportunity(indicators)
-        return {
-            "ticker": symbol,
-            "current_price": indicators.current_price,
-            "volume": indicators.volume,
-            "moving_averages": {
-                "ma20": indicators.ma20,
-                "ma50": indicators.ma50,
-                "ma200": indicators.ma200,
-            },
-            "volatility": indicators.volatility_20,
-            "rsi": indicators.rsi,
-            "macd": {
-                "value": indicators.macd,
-                "signal": indicators.macd_signal,
-            },
-            "support": indicators.support,
-            "resistance": indicators.resistance,
-            **opportunity,
-            "disclaimer": "For research and educational purposes only. Not financial advice.",
-        }
+        return _analyze_symbol(symbol)
     except HTTPException:
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Analysis failed for {symbol}: {exc}") from exc
+
+
+@app.get("/api/watchlist")
+def watchlist(
+    tickers: str = Query(
+        "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA",
+        min_length=1,
+        max_length=160,
+    )
+) -> dict[str, Any]:
+    symbols = []
+    for item in tickers.split(","):
+        symbol = item.strip().upper()
+        if symbol and symbol not in symbols:
+            symbols.append(symbol)
+
+    if not symbols:
+        raise HTTPException(status_code=400, detail="At least one ticker is required.")
+
+    symbols = symbols[:12]
+    results: list[dict[str, Any]] = []
+    errors: list[dict[str, str]] = []
+
+    for symbol in symbols:
+        try:
+            analysis = _analyze_symbol(symbol)
+            results.append(
+                {
+                    "ticker": analysis["ticker"],
+                    "price": analysis["current_price"],
+                    "daily_change_percent": analysis["daily_change_percent"],
+                    "ai_score": analysis["opportunity_score"],
+                    "momentum_score": analysis["momentum_score"],
+                    "risk_level": analysis["risk_level"],
+                    "signal": analysis["signal"],
+                }
+            )
+        except Exception as exc:
+            errors.append({"ticker": symbol, "detail": str(exc)})
+
+    if not results:
+        raise HTTPException(status_code=404, detail="No watchlist market data could be loaded.")
+
+    return {"tickers": symbols, "results": results, "errors": errors}

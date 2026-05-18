@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type AnalyzeResult = {
   ticker: string;
@@ -36,13 +36,13 @@ type WatchlistRow = {
   change: number;
   aiScore: number;
   momentum: number;
-  risk: "LOW" | "MED" | "HIGH";
-  signal: "BUY" | "WATCH" | "NEUTRAL" | "AVOID";
+  risk: string;
+  signal: string;
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-const watchlist: WatchlistRow[] = [
+const fallbackWatchlist: WatchlistRow[] = [
   { ticker: "NVDA", price: 135.42, change: 1.84, aiScore: 82, momentum: 78, risk: "MED", signal: "BUY" },
   { ticker: "MSFT", price: 421.19, change: 0.42, aiScore: 74, momentum: 66, risk: "LOW", signal: "WATCH" },
   { ticker: "AAPL", price: 190.31, change: -0.37, aiScore: 59, momentum: 48, risk: "LOW", signal: "NEUTRAL" },
@@ -132,10 +132,13 @@ export default function Home() {
   const [ticker, setTicker] = useState("NVDA");
   const [selectedTicker, setSelectedTicker] = useState("NVDA");
   const [result, setResult] = useState<AnalyzeResult | null>(null);
+  const [liveWatchlist, setLiveWatchlist] = useState<WatchlistRow[]>(fallbackWatchlist);
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
+  const [watchlistError, setWatchlistError] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const activeRow = watchlist.find((row) => row.ticker === selectedTicker) ?? watchlist[0];
+  const activeRow = liveWatchlist.find((row) => row.ticker === selectedTicker) ?? liveWatchlist[0];
   const score = result?.opportunity_score ?? activeRow.aiScore;
   const momentum = result?.momentum_score ?? activeRow.momentum;
   const volatility = result?.volatility ?? 24.6;
@@ -155,7 +158,7 @@ export default function Home() {
   const assistantBullets = useMemo(() => {
     if (!result) {
       return [
-        `${selectedTicker} is loaded from the research watchlist. Run live analysis to replace mock terminal values with backend data.`,
+        `${selectedTicker} is loaded from the live opportunity scanner. Run a focused analysis for the full trade plan.`,
         "The model weighs trend, momentum, realized volatility, volume confirmation, and distance from support.",
         "The next production layer will add OpenAI reasoning, saved portfolios, and historical chart endpoints.",
       ];
@@ -176,6 +179,59 @@ export default function Home() {
       "Monitor the entry zone, volume confirmation, MACD direction, and whether price holds above the stop-loss band.",
     ];
   }, [result, selectedTicker]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadWatchlist() {
+      setWatchlistLoading(true);
+      setWatchlistError("");
+
+      try {
+        const symbols = fallbackWatchlist.map((row) => row.ticker).join(",");
+        const response = await fetch(`${API_BASE_URL}/api/watchlist?tickers=${symbols}`);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || "Watchlist scan failed.");
+        }
+        const rows: WatchlistRow[] = data.results.map(
+          (item: {
+            ticker: string;
+            price: number;
+            daily_change_percent: number;
+            ai_score: number;
+            momentum_score: number;
+            risk_level: string;
+            signal: string;
+          }) => ({
+            ticker: item.ticker,
+            price: item.price,
+            change: item.daily_change_percent,
+            aiScore: item.ai_score,
+            momentum: item.momentum_score,
+            risk: item.risk_level,
+            signal: item.signal,
+          })
+        );
+        if (!ignore && rows.length) {
+          setLiveWatchlist(rows);
+        }
+      } catch (err) {
+        if (!ignore) {
+          setWatchlistError(err instanceof Error ? err.message : "Watchlist scan failed.");
+        }
+      } finally {
+        if (!ignore) {
+          setWatchlistLoading(false);
+        }
+      }
+    }
+
+    loadWatchlist();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   async function runAnalysis(nextTicker = ticker) {
     const symbol = nextTicker.trim().toUpperCase();
@@ -257,8 +313,9 @@ export default function Home() {
           <aside className="panel watchPanel">
             <div className="panelHead">
               <p className="eyebrow">Portfolio Watchlist</p>
-              <span>{watchlist.length} names</span>
+              <span>{watchlistLoading ? "Scanning live" : `${liveWatchlist.length} names`}</span>
             </div>
+            {watchlistError ? <p className="watchError">{watchlistError}</p> : null}
             <div className="watchTable">
               <div className="watchRow head">
                 <span>Ticker</span>
@@ -267,7 +324,7 @@ export default function Home() {
                 <span>AI</span>
                 <span>Signal</span>
               </div>
-              {watchlist.map((row) => (
+              {liveWatchlist.map((row) => (
                 <button
                   className={`watchRow ${row.ticker === selectedTicker ? "active" : ""}`}
                   key={row.ticker}
