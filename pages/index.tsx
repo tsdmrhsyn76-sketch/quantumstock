@@ -47,6 +47,22 @@ type WatchlistRow = {
   signal: string;
 };
 
+type OpportunityRow = {
+  rank: number;
+  ticker: string;
+  price: number;
+  opportunity_score: number;
+  quality_score: number;
+  signal: string;
+  expected_upside_percent: number;
+  risk_level: string;
+  risk_reward_ratio: number;
+  entry_zone: { low: number; high: number };
+  target_1: number;
+  catalyst: string;
+  reason: string;
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const fallbackWatchlist: WatchlistRow[] = [
@@ -140,6 +156,9 @@ export default function Home() {
   const [selectedTicker, setSelectedTicker] = useState("NVDA");
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [liveWatchlist, setLiveWatchlist] = useState<WatchlistRow[]>(fallbackWatchlist);
+  const [opportunities, setOpportunities] = useState<OpportunityRow[]>([]);
+  const [opportunitiesLoading, setOpportunitiesLoading] = useState(false);
+  const [opportunitiesError, setOpportunitiesError] = useState("");
   const [watchlistLoading, setWatchlistLoading] = useState(false);
   const [watchlistError, setWatchlistError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -246,6 +265,40 @@ export default function Home() {
     }
 
     loadWatchlist();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadOpportunities() {
+      setOpportunitiesLoading(true);
+      setOpportunitiesError("");
+
+      try {
+        const symbols = "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX";
+        const response = await fetch(`${API_BASE_URL}/api/opportunities?tickers=${symbols}&limit=10`);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || "Opportunity scan failed.");
+        }
+        if (!ignore) {
+          setOpportunities(data.results ?? []);
+        }
+      } catch (err) {
+        if (!ignore) {
+          setOpportunitiesError(err instanceof Error ? err.message : "Opportunity scan failed.");
+        }
+      } finally {
+        if (!ignore) {
+          setOpportunitiesLoading(false);
+        }
+      }
+    }
+
+    loadOpportunities();
     return () => {
       ignore = true;
     };
@@ -392,6 +445,46 @@ export default function Home() {
               <MetricTile label="Expected Upside" value={result ? `${result.expected_upside_percent}%` : "8.4%"} sub="Target model" />
               <MetricTile label="Risk/Reward" value={result?.risk_reward_ratio ?? "2.1"} sub="Plan quality" />
               <MetricTile label="Risk Level" value={riskLevel} sub="Volatility adjusted" />
+            </div>
+
+            <div className="panel opportunitiesPanel">
+              <div className="panelHead">
+                <p className="eyebrow">Weekly Opportunities</p>
+                <span>{opportunitiesLoading ? "Scanning universe" : `${opportunities.length || 10} ranked names`}</span>
+              </div>
+              {opportunitiesError ? <p className="watchError">{opportunitiesError}</p> : null}
+              <div className="opportunityTable">
+                <div className="opportunityRow head">
+                  <span>Rank</span>
+                  <span>Ticker</span>
+                  <span>Score</span>
+                  <span>Upside</span>
+                  <span>R/R</span>
+                  <span>Risk</span>
+                  <span>Catalyst</span>
+                </div>
+                {(opportunities.length ? opportunities : []).map((item) => (
+                  <button
+                    className="opportunityRow"
+                    key={`${item.rank}-${item.ticker}`}
+                    onClick={() => runAnalysis(item.ticker)}
+                    type="button"
+                  >
+                    <b>#{item.rank}</b>
+                    <strong>{item.ticker}</strong>
+                    <span>{item.opportunity_score}</span>
+                    <span className={item.expected_upside_percent >= 0 ? "up" : "down"}>
+                      {item.expected_upside_percent}%
+                    </span>
+                    <span>{item.risk_reward_ratio}</span>
+                    <em>{item.risk_level}</em>
+                    <small>{item.catalyst}</small>
+                  </button>
+                ))}
+                {!opportunities.length && !opportunitiesLoading ? (
+                  <p className="emptyState">Run backend scanner to rank this week's opportunity set.</p>
+                ) : null}
+              </div>
             </div>
 
             <div className="chartGrid">

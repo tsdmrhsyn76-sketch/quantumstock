@@ -347,6 +347,69 @@ h2 {
   gap: 10px;
 }
 
+.opportunityTable {
+  display: grid;
+  gap: 4px;
+}
+
+.opportunityRow {
+  display: grid;
+  grid-template-columns: 46px 70px 56px 72px 52px 64px minmax(150px, 1fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 8px;
+  text-align: left;
+}
+
+.opportunityRow:not(.head) {
+  cursor: pointer;
+}
+
+.opportunityRow:not(.head):hover {
+  border-color: var(--line-strong);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.opportunityRow.head {
+  background: transparent;
+  border-bottom-color: var(--line);
+}
+
+.opportunityRow span,
+.opportunityRow small {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.opportunityRow b,
+.opportunityRow strong {
+  font-family: Menlo, Consolas, monospace;
+}
+
+.opportunityRow em {
+  border: 1px solid var(--line);
+  color: #cbd5e1;
+  display: inline-block;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  padding: 4px 6px;
+  text-align: center;
+}
+
+.emptyState {
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+  padding: 10px;
+}
+
 .metricTile {
   padding: 11px;
   min-width: 0;
@@ -508,5 +571,15 @@ h2 {
   .modelPanel {
     position: sticky;
     top: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .opportunityTable {
+    overflow-x: auto;
+  }
+
+  .opportunityRow {
+    min-width: 740px;
   }
 }

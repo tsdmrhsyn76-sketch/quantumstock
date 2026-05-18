@@ -377,6 +377,26 @@ def _analyze_symbol(symbol: str) -> dict[str, Any]:
     }
 
 
+def _build_catalyst_note(analysis: dict[str, Any]) -> str:
+    if analysis["trend_score"] >= 80 and analysis["momentum_score"] >= 70:
+        return "Trend and momentum alignment"
+    if analysis["volume_score"] >= 78:
+        return "Volume confirmation"
+    if analysis["expected_upside_percent"] >= 8:
+        return "Upside to resistance"
+    if analysis["risk_level"] == "LOW":
+        return "Lower-volatility setup"
+    return "Technical watchlist candidate"
+
+
+def _build_research_reason(analysis: dict[str, Any]) -> str:
+    return (
+        f"{analysis['ticker']} ranks with a {analysis['opportunity_score']}/100 score, "
+        f"{analysis['momentum_score']}/100 momentum, {analysis['risk_level'].lower()} risk, "
+        f"and {analysis['expected_upside_percent']}% modeled upside to target."
+    )
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "healthy", "service": "quantumstock-research-api"}
@@ -435,3 +455,83 @@ def watchlist(
         raise HTTPException(status_code=404, detail="No watchlist market data could be loaded.")
 
     return {"tickers": symbols, "results": results, "errors": errors}
+
+
+@app.get("/api/opportunities")
+def opportunities(
+    tickers: str = Query(
+        "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX",
+        min_length=1,
+        max_length=240,
+    ),
+    limit: int = Query(10, ge=1, le=20),
+) -> dict[str, Any]:
+    symbols = []
+    for item in tickers.split(","):
+        symbol = item.strip().upper()
+        if symbol and symbol not in symbols:
+            symbols.append(symbol)
+
+    if not symbols:
+        raise HTTPException(status_code=400, detail="At least one ticker is required.")
+
+    candidates: list[dict[str, Any]] = []
+    errors: list[dict[str, str]] = []
+
+    for symbol in symbols[:24]:
+        try:
+            analysis = _analyze_symbol(symbol)
+            quality_score = _bounded(
+                analysis["opportunity_score"] * 0.5
+                + min(analysis["risk_reward_ratio"], 4) * 8
+                + max(analysis["expected_upside_percent"], 0) * 1.2
+                + analysis["volume_score"] * 0.12
+            )
+            candidates.append(
+                {
+                    "rank": 0,
+                    "ticker": analysis["ticker"],
+                    "price": analysis["current_price"],
+                    "daily_change_percent": analysis["daily_change_percent"],
+                    "opportunity_score": analysis["opportunity_score"],
+                    "quality_score": quality_score,
+                    "signal": analysis["signal"],
+                    "expected_upside_percent": analysis["expected_upside_percent"],
+                    "risk_level": analysis["risk_level"],
+                    "risk_reward_ratio": analysis["risk_reward_ratio"],
+                    "entry_zone": analysis["entry_zone"],
+                    "stop_loss": analysis["stop_loss"],
+                    "target_1": analysis["target_1"],
+                    "target_2": analysis["target_2"],
+                    "catalyst": _build_catalyst_note(analysis),
+                    "reason": _build_research_reason(analysis),
+                    "warnings": analysis["warnings"],
+                }
+            )
+        except Exception as exc:
+            errors.append({"ticker": symbol, "detail": str(exc)})
+
+    if not candidates:
+        raise HTTPException(status_code=404, detail="No opportunity candidates could be loaded.")
+
+    ranked = sorted(
+        candidates,
+        key=lambda item: (
+            item["quality_score"],
+            item["opportunity_score"],
+            item["expected_upside_percent"],
+        ),
+        reverse=True,
+    )[:limit]
+
+    for index, item in enumerate(ranked, start=1):
+        item["rank"] = index
+
+    return {
+        "universe": symbols,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "methodology": "Ranks equities by opportunity score, risk/reward, upside to target, and volume confirmation.",
+        "results": ranked,
+        "errors": errors,
+        "disclaimer": "For research and educational purposes only. Not financial advice.",
+    }
