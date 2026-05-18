@@ -252,6 +252,30 @@ function signalClass(signal: string) {
   return signal.toLowerCase();
 }
 
+function decisionLabel(item?: OpportunityRow | null) {
+  if (!item) return "No Qualified Setup";
+  if (item.signal === "BUY" && item.risk_reward_ratio >= 1.5 && item.risk_level !== "HIGH") {
+    return "Strong Buy Setup";
+  }
+  if (item.signal === "BUY" || item.signal === "WATCH") {
+    if (item.risk_reward_ratio < 1) return "Wait for Better Entry";
+    if (item.risk_level === "HIGH") return "Watch for Entry";
+    return "Watch for Confirmation";
+  }
+  if (item.expected_upside_percent >= 10 && item.risk_reward_ratio >= 1.5) {
+    return "Research Candidate";
+  }
+  return "Avoid / High Risk";
+}
+
+function decisionTone(item?: OpportunityRow | null) {
+  const label = decisionLabel(item);
+  if (label === "Strong Buy Setup") return "buy";
+  if (label.includes("Watch")) return "watch";
+  if (label.includes("Wait") || label.includes("Research")) return "neutral";
+  return "avoid";
+}
+
 export default function Home() {
   const [ticker, setTicker] = useState("NVDA");
   const [selectedTicker, setSelectedTicker] = useState("NVDA");
@@ -286,6 +310,7 @@ export default function Home() {
   const volatility = result?.volatility ?? 24.6;
   const riskLevel = result?.risk_level ?? activeRow.risk;
   const signal = result?.signal ?? activeRow.signal;
+  const topOpportunity = opportunities[0] ?? weeklyReport?.top_idea ?? null;
 
   const chartData = useMemo(() => {
     if (result?.charts) {
@@ -648,11 +673,44 @@ export default function Home() {
               <MetricTile label="Risk Level" value={riskLevel} sub="Volatility adjusted" />
             </div>
 
-            <div className="panel filterPanel">
+            <div className="panel topPickPanel">
               <div className="panelHead">
-                <p className="eyebrow">Screening Controls</p>
-                <span>{opportunitiesLoading ? "Applying" : "Live filters"}</span>
+                <p className="eyebrow">Auto Opportunity Ranking</p>
+                <span>{opportunitiesLoading ? "Scanning" : decisionLabel(topOpportunity)}</span>
               </div>
+              <div className="topPickGrid">
+                <div>
+                  <span>Top Pick This Week</span>
+                  <strong>{topOpportunity?.ticker ?? "--"}</strong>
+                  <em className={decisionTone(topOpportunity)}>{decisionLabel(topOpportunity)}</em>
+                </div>
+                <div>
+                  <span>Why It Ranks</span>
+                  <p>
+                    {topOpportunity
+                      ? `${topOpportunity.ticker} ranks highest after blending AI score, signal quality, risk/reward, upside, and catalyst tone.`
+                      : "The system will rank opportunities automatically once the scan returns qualified names."}
+                  </p>
+                </div>
+                <div>
+                  <span>Trade Discipline</span>
+                  <p>
+                    {topOpportunity
+                      ? `Entry ${formatCurrency(topOpportunity.entry_zone.low)} - ${formatCurrency(topOpportunity.entry_zone.high)} · R/R ${topOpportunity.risk_reward_ratio} · risk ${topOpportunity.risk_level}.`
+                      : "No forced trade. If no candidate qualifies, the correct output is to wait."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <details className="panel filterPanel">
+              <summary>
+                <span>
+                  <b>Advanced Filters</b>
+                  Fine-tune the scanner only when you want stricter rules.
+                </span>
+                <em>{opportunitiesLoading ? "Applying" : "Optional"}</em>
+              </summary>
               <div className="filterGrid">
                 <label>
                   Min AI Score
@@ -694,7 +752,7 @@ export default function Home() {
                   </select>
                 </label>
               </div>
-            </div>
+            </details>
 
             <div className="panel weeklyBriefPanel">
               <div className="panelHead">
@@ -782,7 +840,10 @@ export default function Home() {
                     </span>
                     <span>{item.risk_reward_ratio}</span>
                     <em>{item.catalyst_score}</em>
-                    <small>{item.top_headline || item.catalyst}</small>
+                    <small>
+                      <b>{decisionLabel(item)}</b>
+                      {item.top_headline || item.catalyst}
+                    </small>
                   </button>
                 ))}
                 {!opportunities.length && !opportunitiesLoading ? (
