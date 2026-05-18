@@ -1119,6 +1119,93 @@ def _build_research_memo(symbol: str) -> dict[str, Any]:
     }
 
 
+def _build_investment_committee_report(symbols: list[str], limit: int) -> dict[str, Any]:
+    ranked, errors = _rank_opportunities(symbols, limit, include_news=True)
+    if not ranked:
+        raise HTTPException(status_code=404, detail="No investment committee candidates could be loaded.")
+
+    market_regime = _build_market_regime()
+    top = ranked[0]
+    buy_candidates = [item for item in ranked if item["signal"] == "BUY"]
+    watch_candidates = [item for item in ranked if item["signal"] == "WATCH"]
+    high_risk = [item for item in ranked if item["risk_level"] == "HIGH"]
+    strong_catalysts = [item for item in ranked if item["catalyst_score"] >= 70]
+
+    recommended_action = "Maintain watchlist discipline"
+    if buy_candidates and market_regime.get("risk_state") == "Constructive":
+        recommended_action = "Consider staged allocation to the highest-ranked BUY candidates"
+    elif top["risk_reward_ratio"] < 1.5:
+        recommended_action = "Do not chase; wait for improved entry zone or stronger risk/reward"
+    elif watch_candidates:
+        recommended_action = "Build watchlist and wait for confirmation before allocation"
+
+    sections = [
+        {
+            "title": "Executive View",
+            "body": (
+                f"{top['ticker']} leads the current opportunity book with a {top['quality_score']}/100 blended score. "
+                f"The regime is classified as {market_regime.get('label', 'Mixed market')} and the recommended posture is: {recommended_action}."
+            ),
+        },
+        {
+            "title": "Opportunity Book",
+            "body": (
+                f"{len(buy_candidates)} BUY candidate(s), {len(watch_candidates)} WATCH candidate(s), "
+                f"and {len(high_risk)} high-risk name(s) were identified across {len(symbols)} scanned tickers."
+            ),
+        },
+        {
+            "title": "Catalyst Monitor",
+            "body": (
+                f"{', '.join(item['ticker'] for item in strong_catalysts[:5]) or 'No ticker'} shows elevated catalyst tone. "
+                "Catalysts should be monitored against price behavior, volume confirmation, and upcoming earnings risk."
+            ),
+        },
+        {
+            "title": "Risk Controls",
+            "body": (
+                "No position should be treated as automatic. Entries should be staged near model-defined zones, "
+                "stop-loss levels should be respected, and low risk/reward setups should remain research-only."
+            ),
+        },
+    ]
+
+    allocation_notes = []
+    for item in ranked[:5]:
+        if item["signal"] == "BUY" and item["risk_level"] != "HIGH" and item["risk_reward_ratio"] >= 1.5:
+            stance = "candidate for staged allocation"
+        elif item["signal"] in {"BUY", "WATCH"}:
+            stance = "watch for entry confirmation"
+        else:
+            stance = "research-only"
+        allocation_notes.append(
+            {
+                "ticker": item["ticker"],
+                "stance": stance,
+                "score": item["quality_score"],
+                "risk": item["risk_level"],
+                "entry_zone": item["entry_zone"],
+                "stop_loss": item["stop_loss"],
+                "target_1": item["target_1"],
+            }
+        )
+
+    return {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "title": "QuantumStock Weekly Investment Committee Report",
+        "universe": symbols,
+        "market_regime": market_regime,
+        "recommended_action": recommended_action,
+        "top_idea": top,
+        "sections": sections,
+        "allocation_notes": allocation_notes,
+        "ranked_opportunities": ranked,
+        "errors": errors,
+        "methodology": "Committee report blends market regime, opportunity score, catalyst tone, risk/reward, and model trade plan.",
+        "disclaimer": "For research and educational purposes only. Not financial advice.",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "healthy", "service": "quantumstock-research-api"}
@@ -1283,3 +1370,18 @@ def weekly_report(
         "methodology": "Blended weekly score = technical opportunity + catalyst tone + risk/reward + upside + volume confirmation.",
         "disclaimer": "For research and educational purposes only. Not financial advice.",
     }
+
+
+@app.get("/api/investment-committee-report")
+def investment_committee_report(
+    tickers: str = Query(
+        "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX",
+        min_length=1,
+        max_length=240,
+    ),
+    limit: int = Query(10, ge=1, le=20),
+) -> dict[str, Any]:
+    symbols = _parse_symbols(tickers, 24)
+    if not symbols:
+        raise HTTPException(status_code=400, detail="At least one ticker is required.")
+    return _build_investment_committee_report(symbols, limit)

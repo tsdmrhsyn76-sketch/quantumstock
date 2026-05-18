@@ -143,6 +143,22 @@ type ResearchMemo = {
   };
 };
 
+type CommitteeReport = {
+  generated_at: string;
+  title: string;
+  recommended_action: string;
+  sections: { title: string; body: string }[];
+  allocation_notes: {
+    ticker: string;
+    stance: string;
+    score: number;
+    risk: string;
+    entry_zone: { low: number; high: number };
+    stop_loss: number;
+    target_1: number;
+  }[];
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const fallbackWatchlist: WatchlistRow[] = [
@@ -241,6 +257,7 @@ export default function Home() {
   const [liveWatchlist, setLiveWatchlist] = useState<WatchlistRow[]>(fallbackWatchlist);
   const [opportunities, setOpportunities] = useState<OpportunityRow[]>([]);
   const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
+  const [committeeReport, setCommitteeReport] = useState<CommitteeReport | null>(null);
   const [opportunitiesLoading, setOpportunitiesLoading] = useState(false);
   const [opportunitiesError, setOpportunitiesError] = useState("");
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
@@ -372,18 +389,24 @@ export default function Home() {
 
       try {
         const symbols = "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX";
-        const response = await fetch(`${API_BASE_URL}/api/weekly-report?tickers=${symbols}&limit=10`);
-        const data = await response.json();
-        if (!response.ok) {
+        const [weeklyResponse, committeeResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/weekly-report?tickers=${symbols}&limit=10`),
+          fetch(`${API_BASE_URL}/api/investment-committee-report?tickers=${symbols}&limit=10`),
+        ]);
+        const data = await weeklyResponse.json();
+        const committeeData = await committeeResponse.json();
+        if (!weeklyResponse.ok) {
           throw new Error(data.detail || "Weekly report scan failed.");
         }
         if (!ignore) {
           setOpportunities(data.results ?? []);
           setWeeklyReport(data);
+          setCommitteeReport(committeeResponse.ok ? committeeData : null);
         }
       } catch (err) {
         if (!ignore) {
           setWeeklyReport(null);
+          setCommitteeReport(null);
           setOpportunitiesError(err instanceof Error ? err.message : "Weekly report scan failed.");
         }
       } finally {
@@ -635,6 +658,31 @@ export default function Home() {
                     {" "}Risk watch: {weeklyReport?.risk_watch?.length ? weeklyReport.risk_watch.join(", ") : "None flagged"}.
                   </p>
                 </div>
+              </div>
+              <div className="committeePanel">
+                <div className="committeeHeader">
+                  <strong>Investment Committee Report</strong>
+                  <span>{committeeReport ? "Generated" : "Pending"}</span>
+                </div>
+                <p>{committeeReport?.recommended_action ?? "Committee recommendation will appear after the report endpoint completes."}</p>
+                <div className="committeeSections">
+                  {(committeeReport?.sections ?? []).slice(0, 2).map((section) => (
+                    <div key={section.title}>
+                      <b>{section.title}</b>
+                      <span>{section.body}</span>
+                    </div>
+                  ))}
+                </div>
+                {committeeReport?.allocation_notes?.length ? (
+                  <div className="allocationList">
+                    {committeeReport.allocation_notes.slice(0, 3).map((item) => (
+                      <span key={`${item.ticker}-${item.stance}`}>
+                        <b>{item.ticker}</b>
+                        {item.stance} · score {item.score} · risk {item.risk}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
 

@@ -444,6 +444,71 @@ h2 {
   margin: 8px 0 0;
 }
 
+.committeePanel {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.committeeHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.committeeHeader strong {
+  color: #f8fafc;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.committeeHeader span {
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #bbf7d0;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 4px 7px;
+  text-transform: uppercase;
+}
+
+.committeePanel > p {
+  color: #fde68a;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 9px 0 0;
+}
+
+.committeeSections,
+.allocationList {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.committeeSections div,
+.allocationList span {
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 9px;
+}
+
+.committeeSections b,
+.allocationList b {
+  color: #e5e7eb;
+  display: block;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.committeeSections span,
+.allocationList span {
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .metricTile {
   padding: 11px;
   min-width: 0;
