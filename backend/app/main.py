@@ -864,6 +864,20 @@ def _parse_symbols(tickers: str, max_symbols: int) -> list[str]:
     return symbols[:max_symbols]
 
 
+def _signal_rank(signal: str) -> int:
+    return {"BUY": 3, "WATCH": 2, "NEUTRAL": 1, "AVOID": 0}.get(signal, 0)
+
+
+def _risk_reward_penalty(ratio: float) -> int:
+    if ratio >= 2:
+        return 0
+    if ratio >= 1.5:
+        return 4
+    if ratio >= 1:
+        return 10
+    return 18
+
+
 def _rank_opportunities(symbols: list[str], limit: int, include_news: bool = True) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
     candidates: list[dict[str, Any]] = []
     errors: list[dict[str, str]] = []
@@ -873,12 +887,19 @@ def _rank_opportunities(symbols: list[str], limit: int, include_news: bool = Tru
             analysis = _analyze_symbol(symbol)
             news_items = _fetch_news_items(symbol, 4) if include_news else []
             catalyst_pack = _score_catalysts(news_items)
+            static_profile = _static_company_profile(symbol)
+            headline = _select_relevant_headline(symbol, {"company_name": static_profile.get("longName", symbol)}, news_items)
+            signal_bonus = {"BUY": 14, "WATCH": 7, "NEUTRAL": -8, "AVOID": -18}.get(analysis["signal"], 0)
+            risk_penalty = 8 if analysis["risk_level"] == "HIGH" else 0
             quality_score = _bounded(
                 analysis["opportunity_score"] * 0.44
                 + min(analysis["risk_reward_ratio"], 4) * 7
                 + max(analysis["expected_upside_percent"], 0) * 1.05
                 + analysis["volume_score"] * 0.1
                 + catalyst_pack["catalyst_score"] * 0.18
+                + signal_bonus
+                - risk_penalty
+                - _risk_reward_penalty(analysis["risk_reward_ratio"])
             )
             candidates.append(
                 {
@@ -900,7 +921,7 @@ def _rank_opportunities(symbols: list[str], limit: int, include_news: bool = Tru
                     "catalyst_score": catalyst_pack["catalyst_score"],
                     "catalyst_count": catalyst_pack["catalyst_count"],
                     "catalyst_types": catalyst_pack["catalyst_types"],
-                    "top_headline": catalyst_pack["top_headline"],
+                    "top_headline": headline,
                     "reason": _build_research_reason(analysis),
                     "warnings": analysis["warnings"],
                 }
@@ -911,6 +932,8 @@ def _rank_opportunities(symbols: list[str], limit: int, include_news: bool = Tru
     ranked = sorted(
         candidates,
         key=lambda item: (
+            _signal_rank(item["signal"]),
+            item["risk_reward_ratio"] >= 1.5,
             item["quality_score"],
             item["opportunity_score"],
             item["catalyst_score"],
@@ -1125,14 +1148,24 @@ def _build_investment_committee_report(symbols: list[str], limit: int) -> dict[s
         raise HTTPException(status_code=404, detail="No investment committee candidates could be loaded.")
 
     market_regime = _build_market_regime()
-    top = ranked[0]
+    top = next(
+        (
+            item
+            for item in ranked
+            if item["signal"] in {"BUY", "WATCH"} and item["risk_reward_ratio"] >= 1 and item["risk_level"] != "HIGH"
+        ),
+        ranked[0],
+    )
     buy_candidates = [item for item in ranked if item["signal"] == "BUY"]
     watch_candidates = [item for item in ranked if item["signal"] == "WATCH"]
     high_risk = [item for item in ranked if item["risk_level"] == "HIGH"]
     strong_catalysts = [item for item in ranked if item["catalyst_score"] >= 70]
 
     recommended_action = "Maintain watchlist discipline"
-    if buy_candidates and market_regime.get("risk_state") == "Constructive":
+    actionable_buy_candidates = [
+        item for item in buy_candidates if item["risk_level"] != "HIGH" and item["risk_reward_ratio"] >= 1.5
+    ]
+    if actionable_buy_candidates and market_regime.get("risk_state") == "Constructive":
         recommended_action = "Consider staged allocation to the highest-ranked BUY candidates"
     elif top["risk_reward_ratio"] < 1.5:
         recommended_action = "Do not chase; wait for improved entry zone or stronger risk/reward"
