@@ -789,6 +789,120 @@ def _build_market_regime() -> dict[str, Any]:
     return regime
 
 
+def _classify_time_horizon(analysis: dict[str, Any]) -> str:
+    if analysis["opportunity_score"] >= 78 and analysis["volatility_score"] >= 55:
+        return "swing-to-position"
+    if analysis["momentum_score"] >= 72 and analysis["volatility_score"] < 55:
+        return "short-term tactical"
+    if analysis["trend_score"] >= 78 and analysis["risk_level"] != "HIGH":
+        return "position / longer-term"
+    return "watchlist / research-only"
+
+
+def _build_research_memo(symbol: str) -> dict[str, Any]:
+    analysis = _analyze_symbol(symbol)
+    news_items = _fetch_news_items(symbol, 6)
+    catalyst_pack = _score_catalysts(news_items)
+    try:
+        profile = _fetch_company_profile(symbol)
+    except Exception:
+        profile = {
+            "company_name": symbol,
+            "sector": "N/A",
+            "industry": "N/A",
+            "market_cap_display": "N/A",
+            "target_mean_price": None,
+            "upside_to_target_percent": None,
+            "recommendation": "N/A",
+            "earnings_dates": [],
+        }
+
+    horizon = _classify_time_horizon(analysis)
+    headline = news_items[0]["title"] if news_items else "No recent catalyst headline was returned."
+    attractive_reasons = [
+        f"Opportunity score is {analysis['opportunity_score']}/100 with a {analysis['signal']} classification.",
+        f"Trend score is {analysis['trend_score']}/100 and momentum score is {analysis['momentum_score']}/100.",
+        f"Modeled upside to target is {analysis['expected_upside_percent']}% with a {analysis['risk_reward_ratio']}x risk/reward ratio.",
+    ]
+    if catalyst_pack["catalyst_count"]:
+        attractive_reasons.append(
+            f"Recent catalyst tone score is {catalyst_pack['catalyst_score']}/100 across {catalyst_pack['catalyst_count']} headline(s)."
+        )
+    if profile.get("upside_to_target_percent") is not None:
+        attractive_reasons.append(
+            f"Consensus target data implies {profile['upside_to_target_percent']}% upside from the current profile snapshot."
+        )
+
+    key_risks = analysis["warnings"][:] if analysis["warnings"] else []
+    if analysis["risk_level"] == "HIGH":
+        key_risks.append("Realized volatility is elevated, so position sizing should be conservative.")
+    if analysis["rsi"] > 70:
+        key_risks.append("RSI is extended, increasing the risk of a near-term pullback.")
+    if not key_risks:
+        key_risks.append("Primary risk is thesis drift: price failing to hold the entry/support zone after analysis.")
+
+    invalidation = [
+        f"Price closes below the stop-loss zone near ${analysis['stop_loss']}.",
+        f"Price loses support near ${analysis['support']} while momentum deteriorates.",
+        "Catalyst headlines turn negative or earnings guidance weakens.",
+    ]
+
+    monitor = [
+        f"Entry zone: ${analysis['entry_zone']['low']} - ${analysis['entry_zone']['high']}.",
+        f"Target 1: ${analysis['target_1']}; Target 2: ${analysis['target_2']}.",
+        f"Resistance level to watch: ${analysis['resistance']}.",
+        f"Latest catalyst: {headline}",
+    ]
+    if profile.get("earnings_dates"):
+        monitor.append(f"Earnings date watch: {' / '.join(profile['earnings_dates'])}.")
+
+    summary = (
+        f"{symbol} is a {horizon} setup with {analysis['signal']} signal quality. "
+        f"The setup is strongest when price remains above the support/entry zone and catalyst tone stays constructive. "
+        f"This memo is a research summary, not a trade instruction."
+    )
+
+    return {
+        "ticker": symbol,
+        "company_name": profile.get("company_name", symbol),
+        "generated_at": datetime.now(UTC).isoformat(),
+        "signal": analysis["signal"],
+        "confidence_score": analysis["opportunity_score"],
+        "time_horizon": horizon,
+        "setup_type": "momentum continuation" if analysis["momentum_score"] >= 70 else "selective pullback / watchlist",
+        "summary": summary,
+        "why_attractive": attractive_reasons,
+        "key_risks": key_risks[:5],
+        "entry_logic": (
+            f"Preferred entry is inside ${analysis['entry_zone']['low']} - ${analysis['entry_zone']['high']}, "
+            f"with stop-loss near ${analysis['stop_loss']} and risk/reward of {analysis['risk_reward_ratio']}x."
+        ),
+        "catalyst_watch": {
+            "score": catalyst_pack["catalyst_score"],
+            "types": catalyst_pack["catalyst_types"],
+            "top_headline": headline,
+        },
+        "invalidation": invalidation,
+        "monitor_before_buying": monitor,
+        "trade_plan": {
+            "entry_zone": analysis["entry_zone"],
+            "stop_loss": analysis["stop_loss"],
+            "target_1": analysis["target_1"],
+            "target_2": analysis["target_2"],
+            "expected_upside_percent": analysis["expected_upside_percent"],
+            "risk_reward_ratio": analysis["risk_reward_ratio"],
+        },
+        "profile_context": {
+            "sector": profile.get("sector"),
+            "industry": profile.get("industry"),
+            "market_cap": profile.get("market_cap_display"),
+            "recommendation": profile.get("recommendation"),
+            "target_mean_price": profile.get("target_mean_price"),
+        },
+        "disclaimer": "For research and educational purposes only. Not financial advice.",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "healthy", "service": "quantumstock-research-api"}
@@ -829,6 +943,17 @@ def company_profile(ticker: str = Query(..., min_length=1, max_length=12)) -> di
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Company profile failed for {symbol}: {exc}") from exc
+
+
+@app.get("/api/research-memo")
+def research_memo(ticker: str = Query(..., min_length=1, max_length=12)) -> dict[str, Any]:
+    symbol = ticker.strip().upper()
+    try:
+        return _build_research_memo(symbol)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Research memo failed for {symbol}: {exc}") from exc
 
 
 @app.get("/api/watchlist")

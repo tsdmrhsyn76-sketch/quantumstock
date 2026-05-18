@@ -114,6 +114,35 @@ type CompanyProfile = {
   business_summary: string;
 };
 
+type ResearchMemo = {
+  ticker: string;
+  company_name: string;
+  generated_at: string;
+  signal: string;
+  confidence_score: number;
+  time_horizon: string;
+  setup_type: string;
+  summary: string;
+  why_attractive: string[];
+  key_risks: string[];
+  entry_logic: string;
+  catalyst_watch: {
+    score: number;
+    types: string[];
+    top_headline: string;
+  };
+  invalidation: string[];
+  monitor_before_buying: string[];
+  trade_plan: {
+    entry_zone: { low: number; high: number };
+    stop_loss: number;
+    target_1: number;
+    target_2: number;
+    expected_upside_percent: number;
+    risk_reward_ratio: number;
+  };
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const fallbackWatchlist: WatchlistRow[] = [
@@ -220,6 +249,9 @@ export default function Home() {
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState("");
+  const [researchMemo, setResearchMemo] = useState<ResearchMemo | null>(null);
+  const [memoLoading, setMemoLoading] = useState(false);
+  const [memoError, setMemoError] = useState("");
   const [watchlistLoading, setWatchlistLoading] = useState(false);
   const [watchlistError, setWatchlistError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -373,16 +405,20 @@ export default function Home() {
     async function loadSelectedTickerContext() {
       setNewsLoading(true);
       setProfileLoading(true);
+      setMemoLoading(true);
       setNewsError("");
       setProfileError("");
+      setMemoError("");
 
       try {
-        const [newsResponse, profileResponse] = await Promise.all([
+        const [newsResponse, profileResponse, memoResponse] = await Promise.all([
           fetch(`${API_BASE_URL}/api/news?ticker=${selectedTicker}&limit=6`),
           fetch(`${API_BASE_URL}/api/company-profile?ticker=${selectedTicker}`),
+          fetch(`${API_BASE_URL}/api/research-memo?ticker=${selectedTicker}`),
         ]);
         const newsData = await newsResponse.json();
         const profileData = await profileResponse.json();
+        const memoData = await memoResponse.json();
 
         if (!ignore) {
           if (newsResponse.ok) {
@@ -398,19 +434,29 @@ export default function Home() {
             setCompanyProfile(null);
             setProfileError(profileData.detail || "Company profile failed.");
           }
+
+          if (memoResponse.ok) {
+            setResearchMemo(memoData);
+          } else {
+            setResearchMemo(null);
+            setMemoError(memoData.detail || "Research memo failed.");
+          }
         }
       } catch (err) {
         if (!ignore) {
           setNewsItems([]);
           setCompanyProfile(null);
+          setResearchMemo(null);
           const message = err instanceof Error ? err.message : "Selected ticker context failed.";
           setNewsError(message);
           setProfileError(message);
+          setMemoError(message);
         }
       } finally {
         if (!ignore) {
           setNewsLoading(false);
           setProfileLoading(false);
+          setMemoLoading(false);
         }
       }
     }
@@ -685,6 +731,51 @@ export default function Home() {
               <span>RSI {result?.rsi ?? "61.8"}</span>
               <span>MACD {result?.macd?.value ?? "1.42"}</span>
               <span>VOL {result ? `${result.volatility}%` : "24.6%"}</span>
+            </div>
+            <div className="memoPanel">
+              <div className="panelHead compact">
+                <p className="eyebrow">AI Research Memo</p>
+                <span>{memoLoading ? "Generating" : researchMemo?.time_horizon ?? "Rule-based"}</span>
+              </div>
+              {memoError ? <p className="watchError">{memoError}</p> : null}
+              {researchMemo ? (
+                <>
+                  <div className="memoHeader">
+                    <strong>{researchMemo.confidence_score}</strong>
+                    <div>
+                      <b>{researchMemo.signal}</b>
+                      <span>{researchMemo.setup_type}</span>
+                    </div>
+                  </div>
+                  <p>{researchMemo.summary}</p>
+                  <div className="memoSection">
+                    <span>Why Attractive</span>
+                    <ul>
+                      {researchMemo.why_attractive.slice(0, 3).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="memoSection">
+                    <span>Key Risk</span>
+                    <ul>
+                      {researchMemo.key_risks.slice(0, 3).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="memoSection">
+                    <span>Before Buying</span>
+                    <ul>
+                      {researchMemo.monitor_before_buying.slice(0, 3).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              ) : !memoLoading && !memoError ? (
+                <p className="emptyState">Research memo will appear after the backend returns analysis context.</p>
+              ) : null}
             </div>
             <div className="companyPanel">
               <div className="panelHead compact">
