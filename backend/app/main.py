@@ -291,6 +291,74 @@ def _normalize_earnings_dates(value: Any) -> list[str]:
     return dates[:2]
 
 
+def _extract_raw_value(payload: dict[str, Any], key: str) -> Any:
+    value = payload.get(key)
+    if isinstance(value, dict):
+        return value.get("raw") if "raw" in value else value.get("fmt")
+    return value
+
+
+def _fetch_yahoo_quote_summary_profile(ticker: str) -> dict[str, Any]:
+    response = requests.get(
+        f"https://query1.finance.yahoo.com/v10/finance/quoteSummary/{ticker}",
+        params={
+            "modules": "assetProfile,summaryDetail,financialData,defaultKeyStatistics,price,recommendationTrend,calendarEvents"
+        },
+        headers={"User-Agent": "QuantumStock Research Terminal/0.1"},
+        timeout=12,
+    )
+    response.raise_for_status()
+    result = response.json().get("quoteSummary", {}).get("result") or []
+    if not result:
+        return {}
+
+    payload = result[0]
+    asset = payload.get("assetProfile", {}) or {}
+    price = payload.get("price", {}) or {}
+    summary = payload.get("summaryDetail", {}) or {}
+    financial = payload.get("financialData", {}) or {}
+    stats = payload.get("defaultKeyStatistics", {}) or {}
+    calendar = payload.get("calendarEvents", {}) or {}
+
+    officers = []
+    for officer in asset.get("companyOfficers", [])[:4]:
+        name = officer.get("name")
+        title = officer.get("title")
+        if name and title:
+            officers.append({"name": name, "title": title})
+
+    earnings_dates = []
+    earnings = calendar.get("earnings", {}) if isinstance(calendar.get("earnings"), dict) else {}
+    for item in earnings.get("earningsDate", []) or []:
+        raw_value = item.get("raw") if isinstance(item, dict) else item
+        try:
+            earnings_dates.append(datetime.fromtimestamp(int(raw_value), UTC).date().isoformat())
+        except (TypeError, ValueError, OSError):
+            continue
+
+    info = {
+        "longName": _extract_raw_value(price, "longName") or _extract_raw_value(price, "shortName"),
+        "shortName": _extract_raw_value(price, "shortName"),
+        "sector": asset.get("sector"),
+        "industry": asset.get("industry"),
+        "website": asset.get("website"),
+        "longBusinessSummary": asset.get("longBusinessSummary"),
+        "marketCap": _extract_raw_value(price, "marketCap") or _extract_raw_value(summary, "marketCap"),
+        "currentPrice": _extract_raw_value(financial, "currentPrice") or _extract_raw_value(price, "regularMarketPrice"),
+        "targetMeanPrice": _extract_raw_value(financial, "targetMeanPrice"),
+        "beta": _extract_raw_value(summary, "beta") or _extract_raw_value(stats, "beta"),
+        "trailingPE": _extract_raw_value(summary, "trailingPE"),
+        "forwardPE": _extract_raw_value(stats, "forwardPE"),
+        "profitMargins": _extract_raw_value(stats, "profitMargins"),
+        "revenueGrowth": _extract_raw_value(financial, "revenueGrowth"),
+        "recommendationKey": _extract_raw_value(financial, "recommendationKey"),
+        "numberOfAnalystOpinions": _extract_raw_value(financial, "numberOfAnalystOpinions"),
+        "companyOfficers": officers,
+        "earningsDate": earnings_dates,
+    }
+    return {key: value for key, value in info.items() if value not in (None, "", [])}
+
+
 def _fetch_company_profile(ticker: str) -> dict[str, Any]:
     stock = yf.Ticker(ticker)
     try:
@@ -303,6 +371,13 @@ def _fetch_company_profile(ticker: str) -> dict[str, Any]:
             info = stock.info
         except Exception:
             info = {}
+
+    if not info or not (info.get("longName") or info.get("shortName") or info.get("sector")):
+        try:
+            fallback_info = _fetch_yahoo_quote_summary_profile(ticker)
+            info = {**info, **fallback_info}
+        except Exception:
+            pass
 
     if not info:
         raise HTTPException(status_code=404, detail=f"No company profile found for {ticker}.")
@@ -506,8 +581,10 @@ def _score_opportunity(ind: IndicatorPack) -> dict[str, Any]:
 
     risk_level = "LOW" if volatility_score >= 72 else "MEDIUM" if volatility_score >= 48 else "HIGH"
 
-    entry_low = round(max(ind.support * 0.995, ind.current_price * 0.96), 2)
-    entry_high = round(min(ind.support * 1.035, ind.current_price * 1.015), 2)
+    raw_entry_low = round(max(ind.support * 0.995, ind.current_price * 0.96), 2)
+    raw_entry_high = round(min(ind.support * 1.035, ind.current_price * 1.015), 2)
+    entry_low = min(raw_entry_low, raw_entry_high)
+    entry_high = max(raw_entry_low, raw_entry_high)
     stop_loss = round(min(ind.support * 0.965, ind.current_price * 0.93), 2)
     target_price = round(max(ind.resistance, ind.current_price * (1 + max(0.06, resistance_distance))), 2)
     target_2 = round(target_price * 1.06, 2)
@@ -799,6 +876,27 @@ def _classify_time_horizon(analysis: dict[str, Any]) -> str:
     return "watchlist / research-only"
 
 
+def _select_relevant_headline(symbol: str, profile: dict[str, Any], news_items: list[dict[str, Any]]) -> str:
+    if not news_items:
+        return "No recent catalyst headline was returned."
+
+    company_name = str(profile.get("company_name") or "")
+    company_tokens = [
+        token.lower()
+        for token in company_name.replace(",", " ").replace(".", " ").split()
+        if len(token) >= 4
+    ][:4]
+    needles = {symbol.lower(), *company_tokens}
+
+    for item in news_items:
+        title = str(item.get("title") or "")
+        haystack = title.lower()
+        if any(needle in haystack for needle in needles):
+            return title
+
+    return "Recent sector or market headline detected, but no company-specific headline was isolated."
+
+
 def _build_research_memo(symbol: str) -> dict[str, Any]:
     analysis = _analyze_symbol(symbol)
     news_items = _fetch_news_items(symbol, 6)
@@ -818,7 +916,7 @@ def _build_research_memo(symbol: str) -> dict[str, Any]:
         }
 
     horizon = _classify_time_horizon(analysis)
-    headline = news_items[0]["title"] if news_items else "No recent catalyst headline was returned."
+    headline = _select_relevant_headline(symbol, profile, news_items)
     attractive_reasons = [
         f"Opportunity score is {analysis['opportunity_score']}/100 with a {analysis['signal']} classification.",
         f"Trend score is {analysis['trend_score']}/100 and momentum score is {analysis['momentum_score']}/100.",
