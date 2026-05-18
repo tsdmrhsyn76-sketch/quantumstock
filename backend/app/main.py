@@ -144,6 +144,107 @@ def _download_history(ticker: str, period: str) -> pd.DataFrame:
     )
 
 
+def _parse_timestamp(value: Any) -> str | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromtimestamp(int(value), UTC).isoformat()
+    except (TypeError, ValueError, OSError):
+        return None
+
+
+def _extract_news_item(item: dict[str, Any]) -> dict[str, Any] | None:
+    content = item.get("content") if isinstance(item.get("content"), dict) else item
+    title = content.get("title") or item.get("title")
+    if not title:
+        return None
+
+    provider = content.get("provider") or item.get("publisher") or {}
+    if isinstance(provider, dict):
+        source = provider.get("displayName") or provider.get("name") or "Yahoo Finance"
+    else:
+        source = str(provider) if provider else "Yahoo Finance"
+
+    click_url = content.get("clickThroughUrl") or content.get("canonicalUrl") or item.get("link") or {}
+    if isinstance(click_url, dict):
+        url = click_url.get("url")
+    else:
+        url = click_url
+
+    summary = content.get("summary") or item.get("summary") or ""
+    published_at = (
+        content.get("pubDate")
+        or _parse_timestamp(content.get("providerPublishTime"))
+        or _parse_timestamp(item.get("providerPublishTime"))
+    )
+
+    return {
+        "title": title,
+        "source": source,
+        "url": url or "",
+        "published_at": published_at,
+        "summary": summary,
+        "catalyst_type": _classify_news(title, summary),
+    }
+
+
+def _classify_news(title: str, summary: str = "") -> str:
+    text = f"{title} {summary}".lower()
+    if any(word in text for word in ("earnings", "revenue", "profit", "guidance", "quarter")):
+        return "Earnings"
+    if any(word in text for word in ("deal", "partnership", "contract", "agreement", "customer")):
+        return "Deal"
+    if any(word in text for word in ("upgrade", "downgrade", "price target", "analyst")):
+        return "Analyst"
+    if any(word in text for word in ("launch", "product", "chip", "ai", "cloud", "platform")):
+        return "Product"
+    if any(word in text for word in ("sec", "filing", "8-k", "10-q", "10-k")):
+        return "Filing"
+    return "Market"
+
+
+def _fetch_yahoo_search_news(ticker: str, limit: int) -> list[dict[str, Any]]:
+    response = requests.get(
+        "https://query2.finance.yahoo.com/v1/finance/search",
+        params={"q": ticker, "newsCount": limit, "quotesCount": 0},
+        headers={"User-Agent": "QuantumStock Research Terminal/0.1"},
+        timeout=12,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    return payload.get("news", []) or []
+
+
+def _fetch_news_items(ticker: str, limit: int = 8) -> list[dict[str, Any]]:
+    raw_items: list[dict[str, Any]] = []
+    try:
+        raw_items = yf.Ticker(ticker).news or []
+    except Exception:
+        raw_items = []
+
+    if not raw_items:
+        try:
+            raw_items = _fetch_yahoo_search_news(ticker, limit)
+        except Exception:
+            raw_items = []
+
+    normalized: list[dict[str, Any]] = []
+    seen_titles: set[str] = set()
+    for item in raw_items:
+        parsed = _extract_news_item(item)
+        if not parsed:
+            continue
+        key = parsed["title"].strip().lower()
+        if key in seen_titles:
+            continue
+        seen_titles.add(key)
+        normalized.append(parsed)
+        if len(normalized) >= limit:
+            break
+
+    return normalized
+
+
 def _calculate_rsi(close: pd.Series, window: int = 14) -> pd.Series:
     delta = close.diff()
     gain = delta.clip(lower=0)
@@ -411,6 +512,21 @@ def analyze(ticker: str = Query(..., min_length=1, max_length=12)) -> dict[str, 
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Analysis failed for {symbol}: {exc}") from exc
+
+
+@app.get("/api/news")
+def news(ticker: str = Query(..., min_length=1, max_length=12), limit: int = Query(8, ge=1, le=20)) -> dict[str, Any]:
+    symbol = ticker.strip().upper()
+    try:
+        items = _fetch_news_items(symbol, limit)
+        return {
+            "ticker": symbol,
+            "count": len(items),
+            "items": items,
+            "disclaimer": "News is provided for research context only. Not financial advice.",
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"News fetch failed for {symbol}: {exc}") from exc
 
 
 @app.get("/api/watchlist")

@@ -63,6 +63,15 @@ type OpportunityRow = {
   reason: string;
 };
 
+type NewsItem = {
+  title: string;
+  source: string;
+  url: string;
+  published_at?: string | null;
+  summary?: string;
+  catalyst_type: string;
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const fallbackWatchlist: WatchlistRow[] = [
@@ -159,6 +168,9 @@ export default function Home() {
   const [opportunities, setOpportunities] = useState<OpportunityRow[]>([]);
   const [opportunitiesLoading, setOpportunitiesLoading] = useState(false);
   const [opportunitiesError, setOpportunitiesError] = useState("");
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [newsError, setNewsError] = useState("");
   const [watchlistLoading, setWatchlistLoading] = useState(false);
   const [watchlistError, setWatchlistError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -303,6 +315,40 @@ export default function Home() {
       ignore = true;
     };
   }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadNews() {
+      setNewsLoading(true);
+      setNewsError("");
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/news?ticker=${selectedTicker}&limit=6`);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || "News fetch failed.");
+        }
+        if (!ignore) {
+          setNewsItems(data.items ?? []);
+        }
+      } catch (err) {
+        if (!ignore) {
+          setNewsItems([]);
+          setNewsError(err instanceof Error ? err.message : "News fetch failed.");
+        }
+      } finally {
+        if (!ignore) {
+          setNewsLoading(false);
+        }
+      }
+    }
+
+    loadNews();
+    return () => {
+      ignore = true;
+    };
+  }, [selectedTicker]);
 
   async function runAnalysis(nextTicker = ticker) {
     const symbol = nextTicker.trim().toUpperCase();
@@ -538,6 +584,25 @@ export default function Home() {
               <span>RSI {result?.rsi ?? "61.8"}</span>
               <span>MACD {result?.macd?.value ?? "1.42"}</span>
               <span>VOL {result ? `${result.volatility}%` : "24.6%"}</span>
+            </div>
+            <div className="newsPanel">
+              <div className="panelHead compact">
+                <p className="eyebrow">News & Catalysts</p>
+                <span>{newsLoading ? "Loading" : `${newsItems.length} items`}</span>
+              </div>
+              {newsError ? <p className="watchError">{newsError}</p> : null}
+              <div className="newsList">
+                {newsItems.map((item) => (
+                  <a href={item.url || "#"} key={item.title} rel="noreferrer" target="_blank">
+                    <span>{item.catalyst_type}</span>
+                    <strong>{item.title}</strong>
+                    <small>{item.source}</small>
+                  </a>
+                ))}
+                {!newsItems.length && !newsLoading && !newsError ? (
+                  <p className="emptyState">No recent catalyst headlines returned for {selectedTicker}.</p>
+                ) : null}
+              </div>
             </div>
             {result?.warnings?.length ? (
               <div className="warningBox">
