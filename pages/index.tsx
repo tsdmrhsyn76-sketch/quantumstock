@@ -273,6 +273,10 @@ export default function Home() {
   const [watchlistError, setWatchlistError] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [minScore, setMinScore] = useState(0);
+  const [minRiskReward, setMinRiskReward] = useState(0);
+  const [signalFilter, setSignalFilter] = useState("ALL");
+  const [maxRisk, setMaxRisk] = useState("ANY");
 
   const activeRow = liveWatchlist.find((row) => row.ticker === selectedTicker) ?? liveWatchlist[0];
   const score = result?.opportunity_score ?? activeRow.aiScore;
@@ -389,9 +393,17 @@ export default function Home() {
 
       try {
         const symbols = "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX";
+        const params = new URLSearchParams({
+          tickers: symbols,
+          limit: "10",
+          min_score: String(minScore),
+          min_rr: String(minRiskReward),
+          signal: signalFilter,
+          max_risk: maxRisk,
+        });
         const [weeklyResponse, committeeResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/weekly-report?tickers=${symbols}&limit=10`),
-          fetch(`${API_BASE_URL}/api/investment-committee-report?tickers=${symbols}&limit=10`),
+          fetch(`${API_BASE_URL}/api/weekly-report?${params.toString()}`),
+          fetch(`${API_BASE_URL}/api/investment-committee-report?${params.toString()}`),
         ]);
         const data = await weeklyResponse.json();
         const committeeData = await committeeResponse.json();
@@ -420,7 +432,7 @@ export default function Home() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [maxRisk, minRiskReward, minScore, signalFilter]);
 
   useEffect(() => {
     let ignore = false;
@@ -631,6 +643,54 @@ export default function Home() {
               <MetricTile label="Expected Upside" value={result ? `${result.expected_upside_percent}%` : "8.4%"} sub="Target model" />
               <MetricTile label="Risk/Reward" value={result?.risk_reward_ratio ?? "2.1"} sub="Plan quality" />
               <MetricTile label="Risk Level" value={riskLevel} sub="Volatility adjusted" />
+            </div>
+
+            <div className="panel filterPanel">
+              <div className="panelHead">
+                <p className="eyebrow">Screening Controls</p>
+                <span>{opportunitiesLoading ? "Applying" : "Live filters"}</span>
+              </div>
+              <div className="filterGrid">
+                <label>
+                  Min AI Score
+                  <input
+                    max="100"
+                    min="0"
+                    onChange={(event) => setMinScore(Number(event.target.value))}
+                    type="number"
+                    value={minScore}
+                  />
+                </label>
+                <label>
+                  Min R/R
+                  <input
+                    max="10"
+                    min="0"
+                    onChange={(event) => setMinRiskReward(Number(event.target.value))}
+                    step="0.1"
+                    type="number"
+                    value={minRiskReward}
+                  />
+                </label>
+                <label>
+                  Signal
+                  <select onChange={(event) => setSignalFilter(event.target.value)} value={signalFilter}>
+                    <option value="ALL">All</option>
+                    <option value="BUY,WATCH">Buy + Watch</option>
+                    <option value="BUY">Buy only</option>
+                    <option value="WATCH">Watch only</option>
+                  </select>
+                </label>
+                <label>
+                  Max Risk
+                  <select onChange={(event) => setMaxRisk(event.target.value)} value={maxRisk}>
+                    <option value="ANY">Any</option>
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <div className="panel weeklyBriefPanel">

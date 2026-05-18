@@ -528,6 +528,38 @@ h2 {
   font-size: 11px;
 }
 
+.filterPanel {
+  border-color: rgba(245, 158, 11, 0.22);
+}
+
+.filterGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.filterGrid label {
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 8px;
+  text-transform: uppercase;
+}
+
+.filterGrid input,
+.filterGrid select {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(2, 5, 10, 0.8);
+  color: #f8fafc;
+  min-width: 0;
+  outline: 0;
+  padding: 8px;
+}
+
 .chartCard {
   min-height: 150px;
   padding: 10px;
@@ -841,7 +873,8 @@ h2 {
   .chartGrid,
   .tradeGrid,
   .factorGrid,
-  .briefGrid {
+  .briefGrid,
+  .filterGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -854,6 +887,10 @@ h2 {
 
   .briefGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .filterGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .watchPanel,

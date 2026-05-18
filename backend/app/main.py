@@ -864,6 +864,15 @@ def _parse_symbols(tickers: str, max_symbols: int) -> list[str]:
     return symbols[:max_symbols]
 
 
+def _parse_signal_filter(value: str) -> set[str] | None:
+    normalized = value.strip().upper()
+    if normalized in {"", "ALL", "ANY"}:
+        return None
+    signals = {item.strip().upper() for item in normalized.split(",") if item.strip()}
+    allowed = {"BUY", "WATCH", "NEUTRAL", "AVOID"}
+    return signals & allowed or None
+
+
 def _signal_rank(signal: str) -> int:
     return {"BUY": 3, "WATCH": 2, "NEUTRAL": 1, "AVOID": 0}.get(signal, 0)
 
@@ -878,13 +887,32 @@ def _risk_reward_penalty(ratio: float) -> int:
     return 18
 
 
-def _rank_opportunities(symbols: list[str], limit: int, include_news: bool = True) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+def _rank_opportunities(
+    symbols: list[str],
+    limit: int,
+    include_news: bool = True,
+    min_score: int = 0,
+    min_risk_reward: float = 0,
+    signals: set[str] | None = None,
+    max_risk: str = "ANY",
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
     candidates: list[dict[str, Any]] = []
     errors: list[dict[str, str]] = []
+    risk_rank = {"LOW": 1, "MEDIUM": 2, "HIGH": 3}
+    max_risk_rank = risk_rank.get(max_risk.upper(), 3)
 
     for symbol in symbols[:24]:
         try:
             analysis = _analyze_symbol(symbol)
+            if analysis["opportunity_score"] < min_score:
+                continue
+            if analysis["risk_reward_ratio"] < min_risk_reward:
+                continue
+            if signals and analysis["signal"] not in signals:
+                continue
+            if risk_rank.get(analysis["risk_level"], 3) > max_risk_rank:
+                continue
+
             news_items = _fetch_news_items(symbol, 4) if include_news else []
             catalyst_pack = _score_catalysts(news_items)
             static_profile = _static_company_profile(symbol)
@@ -1142,8 +1170,23 @@ def _build_research_memo(symbol: str) -> dict[str, Any]:
     }
 
 
-def _build_investment_committee_report(symbols: list[str], limit: int) -> dict[str, Any]:
-    ranked, errors = _rank_opportunities(symbols, limit, include_news=True)
+def _build_investment_committee_report(
+    symbols: list[str],
+    limit: int,
+    min_score: int = 0,
+    min_risk_reward: float = 0,
+    signals: set[str] | None = None,
+    max_risk: str = "ANY",
+) -> dict[str, Any]:
+    ranked, errors = _rank_opportunities(
+        symbols,
+        limit,
+        include_news=True,
+        min_score=min_score,
+        min_risk_reward=min_risk_reward,
+        signals=signals,
+        max_risk=max_risk,
+    )
     if not ranked:
         raise HTTPException(status_code=404, detail="No investment committee candidates could be loaded.")
 
@@ -1235,6 +1278,12 @@ def _build_investment_committee_report(symbols: list[str], limit: int) -> dict[s
         "ranked_opportunities": ranked,
         "errors": errors,
         "methodology": "Committee report blends market regime, opportunity score, catalyst tone, risk/reward, and model trade plan.",
+        "filters": {
+            "min_score": min_score,
+            "min_rr": min_risk_reward,
+            "signal": sorted(signals) if signals else "ALL",
+            "max_risk": max_risk,
+        },
         "disclaimer": "For research and educational purposes only. Not financial advice.",
     }
 
@@ -1344,13 +1393,25 @@ def opportunities(
         max_length=240,
     ),
     limit: int = Query(10, ge=1, le=20),
+    min_score: int = Query(0, ge=0, le=100),
+    min_rr: float = Query(0, ge=0, le=10),
+    signal: str = Query("ALL", max_length=40),
+    max_risk: str = Query("ANY", max_length=12),
 ) -> dict[str, Any]:
     symbols = _parse_symbols(tickers, 24)
 
     if not symbols:
         raise HTTPException(status_code=400, detail="At least one ticker is required.")
 
-    ranked, errors = _rank_opportunities(symbols, limit, include_news=True)
+    ranked, errors = _rank_opportunities(
+        symbols,
+        limit,
+        include_news=True,
+        min_score=min_score,
+        min_risk_reward=min_rr,
+        signals=_parse_signal_filter(signal),
+        max_risk=max_risk,
+    )
 
     if not ranked:
         raise HTTPException(status_code=404, detail="No opportunity candidates could be loaded.")
@@ -1359,6 +1420,7 @@ def opportunities(
         "universe": symbols,
         "generated_at": datetime.now(UTC).isoformat(),
         "methodology": "Ranks equities by opportunity score, catalyst score, risk/reward, upside to target, and volume confirmation.",
+        "filters": {"min_score": min_score, "min_rr": min_rr, "signal": signal, "max_risk": max_risk},
         "results": ranked,
         "errors": errors,
         "disclaimer": "For research and educational purposes only. Not financial advice.",
@@ -1373,12 +1435,24 @@ def weekly_report(
         max_length=240,
     ),
     limit: int = Query(10, ge=1, le=20),
+    min_score: int = Query(0, ge=0, le=100),
+    min_rr: float = Query(0, ge=0, le=10),
+    signal: str = Query("ALL", max_length=40),
+    max_risk: str = Query("ANY", max_length=12),
 ) -> dict[str, Any]:
     symbols = _parse_symbols(tickers, 24)
     if not symbols:
         raise HTTPException(status_code=400, detail="At least one ticker is required.")
 
-    ranked, errors = _rank_opportunities(symbols, limit, include_news=True)
+    ranked, errors = _rank_opportunities(
+        symbols,
+        limit,
+        include_news=True,
+        min_score=min_score,
+        min_risk_reward=min_rr,
+        signals=_parse_signal_filter(signal),
+        max_risk=max_risk,
+    )
     if not ranked:
         raise HTTPException(status_code=404, detail="No weekly opportunity candidates could be loaded.")
 
@@ -1401,6 +1475,7 @@ def weekly_report(
         "results": ranked,
         "errors": errors,
         "methodology": "Blended weekly score = technical opportunity + catalyst tone + risk/reward + upside + volume confirmation.",
+        "filters": {"min_score": min_score, "min_rr": min_rr, "signal": signal, "max_risk": max_risk},
         "disclaimer": "For research and educational purposes only. Not financial advice.",
     }
 
@@ -1413,8 +1488,19 @@ def investment_committee_report(
         max_length=240,
     ),
     limit: int = Query(10, ge=1, le=20),
+    min_score: int = Query(0, ge=0, le=100),
+    min_rr: float = Query(0, ge=0, le=10),
+    signal: str = Query("ALL", max_length=40),
+    max_risk: str = Query("ANY", max_length=12),
 ) -> dict[str, Any]:
     symbols = _parse_symbols(tickers, 24)
     if not symbols:
         raise HTTPException(status_code=400, detail="At least one ticker is required.")
-    return _build_investment_committee_report(symbols, limit)
+    return _build_investment_committee_report(
+        symbols,
+        limit,
+        min_score=min_score,
+        min_risk_reward=min_rr,
+        signals=_parse_signal_filter(signal),
+        max_risk=max_risk,
+    )
