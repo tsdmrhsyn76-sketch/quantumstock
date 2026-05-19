@@ -311,6 +311,33 @@ export default function Home() {
   const riskLevel = result?.risk_level ?? activeRow.risk;
   const signal = result?.signal ?? activeRow.signal;
   const topOpportunity = opportunities[0] ?? weeklyReport?.top_idea ?? null;
+  const tradePlanSource = result
+    ? {
+        entryZone: result.entry_zone,
+        stopLoss: result.stop_loss,
+        target1: result.target_1 ?? result.target_price,
+        target2: result.target_2,
+        support: result.support,
+        resistance: result.resistance,
+        riskReward: result.risk_reward_ratio,
+        upside: result.expected_upside_percent,
+      }
+    : researchMemo
+      ? {
+          entryZone: researchMemo.trade_plan.entry_zone,
+          stopLoss: researchMemo.trade_plan.stop_loss,
+          target1: researchMemo.trade_plan.target_1,
+          target2: researchMemo.trade_plan.target_2,
+          support: undefined,
+          resistance: undefined,
+          riskReward: researchMemo.trade_plan.risk_reward_ratio,
+          upside: researchMemo.trade_plan.expected_upside_percent,
+        }
+      : null;
+  const pendingTradePlanText = loading ? "Loading..." : "Run Analysis";
+  const entryZoneText = tradePlanSource
+    ? `${formatCurrency(tradePlanSource.entryZone.low)} - ${formatCurrency(tradePlanSource.entryZone.high)}`
+    : pendingTradePlanText;
 
   const chartData = useMemo(() => {
     if (result?.charts) {
@@ -865,23 +892,58 @@ export default function Home() {
 
             <div className="panel tradePanel">
               <div className="panelHead">
-                <p className="eyebrow">Trade Plan</p>
-                <span>Structured research output</span>
+                <p className="eyebrow">Model Trade Plan</p>
+                <span>Research-only price levels</span>
               </div>
+              <p className="panelNote">
+                These levels show where the model would monitor entry, invalidation, and upside. They are not buy or sell
+                instructions.
+              </p>
               <div className="tradeGrid">
                 <MetricTile
-                  label="Entry Zone"
-                  value={
-                    result
-                      ? `${formatCurrency(result.entry_zone.low)} - ${formatCurrency(result.entry_zone.high)}`
-                      : "$129.20 - $134.80"
-                  }
+                  label="Entry Watch Zone"
+                  value={entryZoneText}
+                  sub="Preferred area to monitor"
                 />
-                <MetricTile label="Stop-Loss" value={formatCurrency(result?.stop_loss) || "$121.40"} />
-                <MetricTile label="Target 1" value={formatCurrency(result?.target_1) || "$148.20"} />
-                <MetricTile label="Target 2" value={formatCurrency(result?.target_2) || "$157.10"} />
-                <MetricTile label="Support" value={formatCurrency(result?.support) || "$126.80"} />
-                <MetricTile label="Resistance" value={formatCurrency(result?.resistance) || "$148.20"} />
+                <MetricTile
+                  label="Invalidation"
+                  value={tradePlanSource ? formatCurrency(tradePlanSource.stopLoss) : pendingTradePlanText}
+                  sub="Model stop-loss area"
+                />
+                <MetricTile
+                  label="Target 1"
+                  value={tradePlanSource ? formatCurrency(tradePlanSource.target1) : pendingTradePlanText}
+                  sub="First upside objective"
+                />
+                <MetricTile
+                  label="Target 2"
+                  value={tradePlanSource ? formatCurrency(tradePlanSource.target2) : pendingTradePlanText}
+                  sub="Extended upside scenario"
+                />
+                <MetricTile
+                  label="Support"
+                  value={typeof tradePlanSource?.support === "number" ? formatCurrency(tradePlanSource.support) : "Focused analysis"}
+                  sub="Nearest demand zone"
+                />
+                <MetricTile
+                  label="Resistance"
+                  value={
+                    typeof tradePlanSource?.resistance === "number"
+                      ? formatCurrency(tradePlanSource.resistance)
+                      : "Focused analysis"
+                  }
+                  sub="Nearest supply zone"
+                />
+                <MetricTile
+                  label="Risk / Reward"
+                  value={tradePlanSource ? `${tradePlanSource.riskReward}x` : pendingTradePlanText}
+                  sub="Reward versus modeled risk"
+                />
+                <MetricTile
+                  label="Modeled Upside"
+                  value={tradePlanSource ? `${tradePlanSource.upside}%` : pendingTradePlanText}
+                  sub="To first target"
+                />
               </div>
             </div>
           </section>

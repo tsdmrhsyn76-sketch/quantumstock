@@ -351,6 +351,15 @@ h2 {
   gap: 10px;
 }
 
+.panelNote {
+  border-left: 2px solid rgba(245, 158, 11, 0.55);
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 10px 0 0;
+  padding-left: 10px;
+}
+
 .opportunityTable {
   display: grid;
   gap: 4px;
@@ -569,6 +578,7 @@ h2 {
 .metricTile {
   padding: 11px;
   min-width: 0;
+  min-height: 94px;
 }
 
 .metricTile strong {
