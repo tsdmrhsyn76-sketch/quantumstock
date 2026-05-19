@@ -318,6 +318,34 @@ export default function Home() {
   const scannerUniverse = weeklyReport?.universe_name ?? "NASDAQ-100";
   const scannerCount = weeklyReport?.scanned_count ?? 40;
   const scannerDecision = committeeReport?.recommended_action ?? "Rank opportunities and wait for confirmation";
+  const watchlistIntelligence = useMemo(() => {
+    const byScore = [...liveWatchlist].sort((a, b) => b.aiScore - a.aiScore);
+    const byMomentum = [...liveWatchlist].sort((a, b) => b.momentum - a.momentum);
+    const byRisk = [...liveWatchlist].sort((a, b) => {
+      const riskRank: Record<string, number> = { HIGH: 3, MED: 2, MEDIUM: 2, LOW: 1 };
+      return (riskRank[b.risk] ?? 0) - (riskRank[a.risk] ?? 0) || b.aiScore - a.aiScore;
+    });
+    const reboundCandidate =
+      [...liveWatchlist].filter((row) => row.change < 0).sort((a, b) => b.aiScore - a.aiScore)[0] ?? byScore[0];
+
+    return [
+      { label: "Best Setup", value: byScore[0]?.ticker ?? "--", sub: `${byScore[0]?.aiScore ?? "--"} AI score` },
+      {
+        label: "Momentum Leader",
+        value: byMomentum[0]?.ticker ?? "--",
+        sub: `${byMomentum[0]?.momentum ?? "--"} momentum`,
+      },
+      { label: "Highest Risk", value: byRisk[0]?.ticker ?? "--", sub: `${byRisk[0]?.risk ?? "--"} risk` },
+      {
+        label: "Pullback Watch",
+        value: reboundCandidate?.ticker ?? "--",
+        sub:
+          typeof reboundCandidate?.change === "number"
+            ? `${reboundCandidate.change.toFixed(2)}% daily change`
+            : "Awaiting data",
+      },
+    ];
+  }, [liveWatchlist]);
   const tradePlanSource = result
     ? {
         entryZone: result.entry_zone,
@@ -647,6 +675,15 @@ export default function Home() {
               <span>{watchlistLoading ? "Scanning live" : `${liveWatchlist.length} names`}</span>
             </div>
             {watchlistError ? <p className="watchError">{watchlistError}</p> : null}
+            <div className="watchIntelGrid">
+              {watchlistIntelligence.map((item) => (
+                <button key={item.label} onClick={() => selectTicker(item.value)} type="button">
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                  <small>{item.sub}</small>
+                </button>
+              ))}
+            </div>
             <div className="watchTable">
               <div className="watchRow head">
                 <span>Ticker</span>
