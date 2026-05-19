@@ -80,6 +80,8 @@ type WeeklyReport = {
   generated_at: string;
   summary: string;
   methodology: string;
+  universe_name?: string;
+  scanned_count?: number;
   message?: string | null;
   catalyst_focus: string[];
   risk_watch: string[];
@@ -446,9 +448,9 @@ export default function Home() {
       setOpportunitiesError("");
 
       try {
-        const symbols = "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX";
         const params = new URLSearchParams({
-          tickers: symbols,
+          universe: "NASDAQ100",
+          scan_limit: "40",
           limit: "10",
           min_score: String(minScore),
           min_rr: String(minRiskReward),
@@ -703,7 +705,7 @@ export default function Home() {
             <div className="panel topPickPanel">
               <div className="panelHead">
                 <p className="eyebrow">Auto Opportunity Ranking</p>
-                <span>{opportunitiesLoading ? "Scanning" : decisionLabel(topOpportunity)}</span>
+                <span>{opportunitiesLoading ? "Scanning NASDAQ-100" : decisionLabel(topOpportunity)}</span>
               </div>
               <div className="topPickGrid">
                 <div>
@@ -715,8 +717,14 @@ export default function Home() {
                   <span>Why It Ranks</span>
                   <p>
                     {topOpportunity
-                      ? `${topOpportunity.ticker} ranks highest after blending AI score, signal quality, risk/reward, upside, and catalyst tone.`
-                      : "The system will rank opportunities automatically once the scan returns qualified names."}
+                      ? `${topOpportunity.ticker} ranks highest after scanning ${weeklyReport?.scanned_count ?? 40} NASDAQ-100 names and blending AI score, signal quality, risk/reward, upside, and catalyst tone.`
+                      : "The system scans a broad NASDAQ-100 universe and ranks the strongest 10 qualified opportunities automatically."}
+                  </p>
+                </div>
+                <div>
+                  <span>Universe</span>
+                  <p>
+                    {weeklyReport?.universe_name ?? "NASDAQ-100"} coverage · {weeklyReport?.scanned_count ?? 40} names scanned for this MVP run.
                   </p>
                 </div>
                 <div>
@@ -837,7 +845,11 @@ export default function Home() {
             <div className="panel opportunitiesPanel">
               <div className="panelHead">
                 <p className="eyebrow">Weekly Opportunities</p>
-                <span>{opportunitiesLoading ? "Scanning universe" : `${opportunities.length} ranked names`}</span>
+                <span>
+                  {opportunitiesLoading
+                    ? "Scanning NASDAQ-100"
+                    : `${opportunities.length} ranked names · ${weeklyReport?.scanned_count ?? 40} scanned`}
+                </span>
               </div>
               {opportunitiesError ? <p className="watchError">{opportunitiesError}</p> : null}
               <div className="opportunityTable">

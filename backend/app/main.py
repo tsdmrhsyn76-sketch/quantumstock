@@ -26,6 +26,114 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+NASDAQ_100_UNIVERSE = [
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "AMZN",
+    "META",
+    "AVGO",
+    "GOOGL",
+    "GOOG",
+    "TSLA",
+    "COST",
+    "NFLX",
+    "AMD",
+    "PEP",
+    "ADBE",
+    "CSCO",
+    "TMUS",
+    "LIN",
+    "INTU",
+    "AMAT",
+    "TXN",
+    "QCOM",
+    "ISRG",
+    "BKNG",
+    "AMGN",
+    "HON",
+    "CMCSA",
+    "VRTX",
+    "PANW",
+    "ADP",
+    "SBUX",
+    "GILD",
+    "MU",
+    "ADI",
+    "LRCX",
+    "MELI",
+    "KLAC",
+    "MDLZ",
+    "REGN",
+    "CRWD",
+    "PYPL",
+    "CDNS",
+    "SNPS",
+    "MAR",
+    "ORLY",
+    "CSX",
+    "ABNB",
+    "MRVL",
+    "CTAS",
+    "FTNT",
+    "WDAY",
+    "NXPI",
+    "ROP",
+    "ADSK",
+    "PCAR",
+    "CPRT",
+    "CHTR",
+    "MNST",
+    "AEP",
+    "PAYX",
+    "KDP",
+    "ROST",
+    "FAST",
+    "ODFL",
+    "KHC",
+    "EA",
+    "DDOG",
+    "VRSK",
+    "BKR",
+    "EXC",
+    "CTSH",
+    "GEHC",
+    "XEL",
+    "IDXX",
+    "CCEP",
+    "ZS",
+    "FANG",
+    "TEAM",
+    "TTD",
+    "DXCM",
+    "CSGP",
+    "ANSS",
+    "ON",
+    "BIIB",
+    "MDB",
+    "GFS",
+    "ILMN",
+    "WBD",
+    "DLTR",
+    "MRNA",
+    "SIRI",
+]
+
+DEFAULT_CUSTOM_UNIVERSE = [
+    "NVDA",
+    "MSFT",
+    "AAPL",
+    "AMZN",
+    "META",
+    "GOOGL",
+    "AMD",
+    "TSLA",
+    "AVGO",
+    "CRM",
+    "ORCL",
+    "NFLX",
+]
+
 
 @dataclass
 class IndicatorPack:
@@ -864,6 +972,18 @@ def _parse_symbols(tickers: str, max_symbols: int) -> list[str]:
     return symbols[:max_symbols]
 
 
+def _resolve_universe(tickers: str, universe: str, max_symbols: int) -> tuple[list[str], str]:
+    custom_symbols = _parse_symbols(tickers, max_symbols)
+    if custom_symbols:
+        return custom_symbols, "CUSTOM"
+
+    normalized = universe.strip().upper().replace("-", "")
+    if normalized in {"NASDAQ", "NASDAQ100", "NDX", "QQQ"}:
+        return NASDAQ_100_UNIVERSE[:max_symbols], "NASDAQ-100"
+
+    return DEFAULT_CUSTOM_UNIVERSE[:max_symbols], "DEFAULT"
+
+
 def _parse_signal_filter(value: str) -> set[str] | None:
     normalized = value.strip().upper()
     if normalized in {"", "ALL", "ANY"}:
@@ -901,7 +1021,7 @@ def _rank_opportunities(
     risk_rank = {"LOW": 1, "MEDIUM": 2, "HIGH": 3}
     max_risk_rank = risk_rank.get(max_risk.upper(), 3)
 
-    for symbol in symbols[:24]:
+    for symbol in symbols:
         try:
             analysis = _analyze_symbol(symbol)
             if analysis["opportunity_score"] < min_score:
@@ -1417,18 +1537,16 @@ def watchlist(
 
 @app.get("/api/opportunities")
 def opportunities(
-    tickers: str = Query(
-        "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX",
-        min_length=1,
-        max_length=240,
-    ),
+    tickers: str = Query("", max_length=2000),
+    universe: str = Query("NASDAQ100", max_length=24),
+    scan_limit: int = Query(40, ge=10, le=90),
     limit: int = Query(10, ge=1, le=20),
     min_score: int = Query(0, ge=0, le=100),
     min_rr: float = Query(0, ge=0, le=10),
     signal: str = Query("ALL", max_length=40),
     max_risk: str = Query("ANY", max_length=12),
 ) -> dict[str, Any]:
-    symbols = _parse_symbols(tickers, 24)
+    symbols, universe_name = _resolve_universe(tickers, universe, scan_limit)
 
     if not symbols:
         raise HTTPException(status_code=400, detail="At least one ticker is required.")
@@ -1445,8 +1563,10 @@ def opportunities(
 
     return {
         "universe": symbols,
+        "universe_name": universe_name,
+        "scanned_count": len(symbols),
         "generated_at": datetime.now(UTC).isoformat(),
-        "methodology": "Ranks equities by opportunity score, catalyst score, risk/reward, upside to target, and volume confirmation.",
+        "methodology": "Ranks the selected equity universe by opportunity score, catalyst score, risk/reward, upside to target, and volume confirmation.",
         "filters": {"min_score": min_score, "min_rr": min_rr, "signal": signal, "max_risk": max_risk},
         "results": ranked,
         "message": None if ranked else "No qualified opportunities under current filters.",
@@ -1457,18 +1577,16 @@ def opportunities(
 
 @app.get("/api/weekly-report")
 def weekly_report(
-    tickers: str = Query(
-        "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX",
-        min_length=1,
-        max_length=240,
-    ),
+    tickers: str = Query("", max_length=2000),
+    universe: str = Query("NASDAQ100", max_length=24),
+    scan_limit: int = Query(40, ge=10, le=90),
     limit: int = Query(10, ge=1, le=20),
     min_score: int = Query(0, ge=0, le=100),
     min_rr: float = Query(0, ge=0, le=10),
     signal: str = Query("ALL", max_length=40),
     max_risk: str = Query("ANY", max_length=12),
 ) -> dict[str, Any]:
-    symbols = _parse_symbols(tickers, 24)
+    symbols, universe_name = _resolve_universe(tickers, universe, scan_limit)
     if not symbols:
         raise HTTPException(status_code=400, detail="At least one ticker is required.")
 
@@ -1489,6 +1607,8 @@ def weekly_report(
     return {
         "generated_at": datetime.now(UTC).isoformat(),
         "universe": symbols,
+        "universe_name": universe_name,
+        "scanned_count": len(symbols),
         "market_regime": market_regime,
         "summary": (
             f"{top['ticker']} leads this weekly scan with a {top['quality_score']}/100 blended quality score. "
@@ -1510,18 +1630,16 @@ def weekly_report(
 
 @app.get("/api/investment-committee-report")
 def investment_committee_report(
-    tickers: str = Query(
-        "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,CRM,ORCL,NFLX",
-        min_length=1,
-        max_length=240,
-    ),
+    tickers: str = Query("", max_length=2000),
+    universe: str = Query("NASDAQ100", max_length=24),
+    scan_limit: int = Query(40, ge=10, le=90),
     limit: int = Query(10, ge=1, le=20),
     min_score: int = Query(0, ge=0, le=100),
     min_rr: float = Query(0, ge=0, le=10),
     signal: str = Query("ALL", max_length=40),
     max_risk: str = Query("ANY", max_length=12),
 ) -> dict[str, Any]:
-    symbols = _parse_symbols(tickers, 24)
+    symbols, _universe_name = _resolve_universe(tickers, universe, scan_limit)
     if not symbols:
         raise HTTPException(status_code=400, detail="At least one ticker is required.")
     return _build_investment_committee_report(
