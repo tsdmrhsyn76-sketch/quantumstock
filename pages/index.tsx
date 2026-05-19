@@ -318,6 +318,44 @@ export default function Home() {
   const scannerUniverse = weeklyReport?.universe_name ?? "NASDAQ-100";
   const scannerCount = weeklyReport?.scanned_count ?? 40;
   const scannerDecision = committeeReport?.recommended_action ?? "Rank opportunities and wait for confirmation";
+  const portfolioRisk = useMemo(() => {
+    const count = opportunities.length || 1;
+    const averageScore = opportunities.length
+      ? Math.round(opportunities.reduce((sum, item) => sum + item.quality_score, 0) / count)
+      : 0;
+    const averageRiskReward = opportunities.length
+      ? opportunities.reduce((sum, item) => sum + item.risk_reward_ratio, 0) / count
+      : 0;
+    const highRiskCount = opportunities.filter((item) => item.risk_level === "HIGH").length;
+    const buyWatchCount = opportunities.filter((item) => ["BUY", "WATCH"].includes(item.signal)).length;
+    const highRiskPercent = opportunities.length ? Math.round((highRiskCount / opportunities.length) * 100) : 0;
+    const posture =
+      !opportunities.length || averageScore < 45
+        ? "Cash-Heavy"
+        : highRiskPercent >= 45
+          ? "Conservative"
+          : averageRiskReward >= 1.5 && buyWatchCount >= 4
+            ? "Balanced"
+            : "Selective";
+    const note =
+      posture === "Balanced"
+        ? "Portfolio can stage exposure across top-ranked names with normal risk controls."
+        : posture === "Conservative"
+          ? "High-risk concentration is elevated; size positions smaller and wait for cleaner entries."
+          : posture === "Selective"
+            ? "The scanner found candidates, but entries should be staged only near model zones."
+            : "No broad allocation signal. Preserve cash until the opportunity book improves.";
+
+    return {
+      averageScore,
+      averageRiskReward,
+      highRiskCount,
+      highRiskPercent,
+      buyWatchCount,
+      posture,
+      note,
+    };
+  }, [opportunities]);
   const watchlistIntelligence = useMemo(() => {
     const byScore = [...liveWatchlist].sort((a, b) => b.aiScore - a.aiScore);
     const byMomentum = [...liveWatchlist].sort((a, b) => b.momentum - a.momentum);
@@ -806,6 +844,50 @@ export default function Home() {
                   <strong>{topOpportunity ? decisionLabel(topOpportunity) : "Wait"}</strong>
                   <small>{scannerDecision}</small>
                 </div>
+              </div>
+            </div>
+
+            <div className="panel portfolioRiskPanel">
+              <div className="panelHead">
+                <p className="eyebrow">Portfolio Risk System</p>
+                <span>{opportunitiesLoading ? "Calculating" : portfolioRisk.posture}</span>
+              </div>
+              <div className="riskSummary">
+                <div>
+                  <span>Suggested Posture</span>
+                  <strong>{portfolioRisk.posture}</strong>
+                  <small>{portfolioRisk.note}</small>
+                </div>
+                <div>
+                  <span>Avg Quality</span>
+                  <strong>{portfolioRisk.averageScore || "--"}</strong>
+                  <small>Blended score across Top 10</small>
+                </div>
+                <div>
+                  <span>Avg R/R</span>
+                  <strong>{portfolioRisk.averageRiskReward ? `${portfolioRisk.averageRiskReward.toFixed(2)}x` : "--"}</strong>
+                  <small>Reward versus modeled risk</small>
+                </div>
+                <div>
+                  <span>High Risk</span>
+                  <strong>{portfolioRisk.highRiskPercent}%</strong>
+                  <small>{portfolioRisk.highRiskCount} of {opportunities.length || 0} ranked names</small>
+                </div>
+              </div>
+              <div className="riskDistribution">
+                {["LOW", "MEDIUM", "HIGH"].map((risk) => {
+                  const riskCount = opportunities.filter((item) => item.risk_level === risk).length;
+                  const width = opportunities.length ? Math.round((riskCount / opportunities.length) * 100) : 0;
+                  return (
+                    <div key={risk}>
+                      <span>{risk}</span>
+                      <i>
+                        <em style={{ width: `${width}%` }} />
+                      </i>
+                      <b>{riskCount}</b>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

@@ -734,6 +734,79 @@ h2 {
   margin-top: 5px;
 }
 
+.riskSummary {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.riskSummary div {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(0, 0, 0, 0.2);
+  min-width: 0;
+  padding: 10px;
+}
+
+.riskSummary span,
+.riskDistribution span {
+  color: #94a3b8;
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.riskSummary strong {
+  color: #f8fafc;
+  display: block;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 18px;
+  margin-top: 7px;
+  overflow-wrap: anywhere;
+}
+
+.riskSummary small {
+  color: #94a3b8;
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+  margin-top: 5px;
+}
+
+.riskDistribution {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.riskDistribution div {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 64px 1fr 24px;
+}
+
+.riskDistribution i {
+  background: rgba(148, 163, 184, 0.1);
+  display: block;
+  height: 7px;
+  overflow: hidden;
+}
+
+.riskDistribution em {
+  background: linear-gradient(90deg, #22c55e, #f59e0b, #ef4444);
+  display: block;
+  height: 100%;
+}
+
+.riskDistribution b {
+  color: #f8fafc;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 11px;
+  text-align: right;
+}
+
 .filterGrid label {
   border: 1px solid var(--line);
   background: rgba(0, 0, 0, 0.18);
@@ -1073,6 +1146,7 @@ h2 {
   .briefGrid,
   .filterGrid,
   .scannerGrid,
+  .riskSummary,
   .topPickGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
