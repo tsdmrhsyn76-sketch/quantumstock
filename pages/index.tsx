@@ -318,6 +318,21 @@ export default function Home() {
   const scannerUniverse = weeklyReport?.universe_name ?? "NASDAQ-100";
   const scannerCount = weeklyReport?.scanned_count ?? 40;
   const scannerDecision = committeeReport?.recommended_action ?? "Rank opportunities and wait for confirmation";
+  const marketRegime = weeklyReport?.market_regime;
+  const marketAction =
+    marketRegime?.risk_state === "Constructive"
+      ? "Increase Exposure Selectively"
+      : marketRegime?.risk_state === "Elevated"
+        ? "Reduce Risk"
+        : marketRegime?.risk_state === "Neutral"
+          ? "Stay Selective"
+          : "Await Signal";
+  const regimeTone =
+    marketRegime?.risk_state === "Constructive"
+      ? "buy"
+      : marketRegime?.risk_state === "Elevated"
+        ? "avoid"
+        : "neutral";
   const portfolioRisk = useMemo(() => {
     const count = opportunities.length || 1;
     const averageScore = opportunities.length
@@ -944,13 +959,31 @@ export default function Home() {
 
             <div className="panel weeklyBriefPanel">
               <div className="panelHead">
-                <p className="eyebrow">Weekly Research Brief</p>
+                <p className="eyebrow">Market Regime Engine</p>
                 <span>{opportunitiesLoading ? "Building report" : weeklyReport?.market_regime.label ?? "Awaiting scan"}</span>
+              </div>
+              <div className="regimeDeck">
+                <div className="regimePrimary">
+                  <span>Regime</span>
+                  <strong>{marketRegime?.label ?? "Awaiting Scan"}</strong>
+                  <em className={regimeTone}>{marketRegime?.risk_state ?? "Pending"}</em>
+                  <p>{marketRegime?.summary ?? "The engine monitors SPY, QQQ, and VIX to determine whether the opportunity book should be aggressive, selective, or defensive."}</p>
+                </div>
+                <div className="regimeMetrics">
+                  <MetricTile label="VIX" value={marketRegime?.vix ?? "--"} sub="Volatility pressure" />
+                  <MetricTile label="SPY Score" value={marketRegime?.spy_score ?? "--"} sub="Broad market trend" />
+                  <MetricTile label="QQQ Score" value={marketRegime?.qqq_score ?? "--"} sub="NASDAQ leadership" />
+                  <MetricTile label="Action" value={marketAction} sub="Exposure posture" />
+                </div>
               </div>
               <div className="briefGrid">
                 <div>
-                  <strong>Market Regime</strong>
-                  <p>{weeklyReport?.market_regime.summary ?? "The weekly scanner will summarize SPY, QQQ, and VIX conditions here."}</p>
+                  <strong>Risk Interpretation</strong>
+                  <p>
+                    {marketRegime
+                      ? `${marketRegime.risk_state} market state. The scanner should ${marketAction.toLowerCase()} while respecting model entry zones.`
+                      : "Risk interpretation appears after SPY, QQQ, and VIX are evaluated."}
+                  </p>
                 </div>
                 <div>
                   <strong>Top Idea</strong>

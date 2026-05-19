@@ -536,6 +536,58 @@ h2 {
   border-color: rgba(56, 189, 248, 0.22);
 }
 
+.regimeDeck {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.regimePrimary {
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.1), rgba(2, 6, 23, 0.48));
+  padding: 12px;
+}
+
+.regimePrimary span {
+  color: #94a3b8;
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.regimePrimary strong {
+  color: #f8fafc;
+  display: block;
+  font-size: 24px;
+  line-height: 1.05;
+  margin-top: 7px;
+}
+
+.regimePrimary em {
+  border: 1px solid var(--line);
+  display: inline-block;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  margin-top: 9px;
+  padding: 4px 7px;
+  text-transform: uppercase;
+}
+
+.regimePrimary p {
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+
+.regimeMetrics {
+  display: grid;
+  gap: 8px;
+}
+
 .briefGrid {
   display: grid;
   gap: 10px;
@@ -1147,6 +1199,8 @@ h2 {
   .filterGrid,
   .scannerGrid,
   .riskSummary,
+  .regimeDeck,
+  .regimeMetrics,
   .topPickGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
