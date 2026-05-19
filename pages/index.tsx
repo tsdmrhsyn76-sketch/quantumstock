@@ -1220,33 +1220,49 @@ export default function Home() {
                     </div>
                   </div>
                   <p>{researchMemo.summary}</p>
-                  <div className="memoSection">
-                    <span>Entry Logic</span>
-                    <p>{researchMemo.entry_logic}</p>
-                  </div>
-                  <div className="memoSection">
-                    <span>Why Attractive</span>
-                    <ul>
-                      {researchMemo.why_attractive.slice(0, 3).map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="memoSection">
-                    <span>Key Risk</span>
-                    <ul>
-                      {researchMemo.key_risks.slice(0, 3).map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="memoSection">
-                    <span>Before Buying</span>
-                    <ul>
-                      {researchMemo.monitor_before_buying.slice(0, 3).map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
+                  <div className="analystGrid">
+                    <div className="memoSection">
+                      <span>Why Attractive</span>
+                      <ul>
+                        {researchMemo.why_attractive.slice(0, 2).map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="memoSection">
+                      <span>Key Risk</span>
+                      <ul>
+                        {researchMemo.key_risks.slice(0, 2).map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="memoSection">
+                      <span>Entry Logic</span>
+                      <p>{researchMemo.entry_logic}</p>
+                    </div>
+                    <div className="memoSection">
+                      <span>Market Regime Impact</span>
+                      <p>
+                        {marketRegime
+                          ? `${marketRegime.label} / ${marketRegime.risk_state}. Position sizing should follow the ${marketAction.toLowerCase()} posture.`
+                          : "Market regime is pending; avoid increasing exposure until SPY, QQQ, and VIX context is available."}
+                      </p>
+                    </div>
+                    <div className="memoSection">
+                      <span>Catalyst Watch</span>
+                      <p>
+                        {researchMemo.catalyst_watch.top_headline} · Score {researchMemo.catalyst_watch.score}/100
+                      </p>
+                    </div>
+                    <div className="memoSection">
+                      <span>Monitor Next</span>
+                      <ul>
+                        {researchMemo.monitor_before_buying.slice(0, 2).map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </>
               ) : !memoLoading && !memoError ? (

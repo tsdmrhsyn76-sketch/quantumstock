@@ -1017,10 +1017,14 @@ h2 {
   margin: 0 0 10px;
 }
 
+.analystGrid {
+  display: grid;
+  gap: 8px;
+}
+
 .memoSection {
   border: 1px solid var(--line);
   background: rgba(0, 0, 0, 0.18);
-  margin-top: 8px;
   padding: 9px;
 }
 
@@ -1038,11 +1042,16 @@ h2 {
   padding-left: 16px;
 }
 
-.memoSection li {
+.memoSection li,
+.memoSection p {
   color: #cbd5e1;
   font-size: 11px;
   line-height: 1.45;
   margin-top: 5px;
+}
+
+.memoSection p {
+  margin: 7px 0 0;
 }
 
 .companyPanel > p {
