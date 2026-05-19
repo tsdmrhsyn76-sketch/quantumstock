@@ -313,6 +313,9 @@ export default function Home() {
   const riskLevel = result?.risk_level ?? activeRow.risk;
   const signal = result?.signal ?? activeRow.signal;
   const topOpportunity = opportunities[0] ?? weeklyReport?.top_idea ?? null;
+  const scannerUniverse = weeklyReport?.universe_name ?? "NASDAQ-100";
+  const scannerCount = weeklyReport?.scanned_count ?? 40;
+  const scannerDecision = committeeReport?.recommended_action ?? "Rank opportunities and wait for confirmation";
   const tradePlanSource = result
     ? {
         entryZone: result.entry_zone,
@@ -734,6 +737,35 @@ export default function Home() {
                       ? `Entry ${formatCurrency(topOpportunity.entry_zone.low)} - ${formatCurrency(topOpportunity.entry_zone.high)} · R/R ${topOpportunity.risk_reward_ratio} · risk ${topOpportunity.risk_level}.`
                       : "No forced trade. If no candidate qualifies, the correct output is to wait."}
                   </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="panel scannerPanel">
+              <div className="panelHead">
+                <p className="eyebrow">Universe Scanner</p>
+                <span>{opportunitiesLoading ? "Live scan running" : "Weekly opportunity engine"}</span>
+              </div>
+              <div className="scannerGrid">
+                <div>
+                  <span>Universe</span>
+                  <strong>{scannerUniverse}</strong>
+                  <small>Broad NASDAQ opportunity set</small>
+                </div>
+                <div>
+                  <span>Names Scanned</span>
+                  <strong>{scannerCount}</strong>
+                  <small>MVP scan limit for stable free data</small>
+                </div>
+                <div>
+                  <span>Qualified Output</span>
+                  <strong>{opportunities.length}</strong>
+                  <small>Ranked candidates shown below</small>
+                </div>
+                <div>
+                  <span>Committee Posture</span>
+                  <strong>{topOpportunity ? decisionLabel(topOpportunity) : "Wait"}</strong>
+                  <small>{scannerDecision}</small>
                 </div>
               </div>
             </div>

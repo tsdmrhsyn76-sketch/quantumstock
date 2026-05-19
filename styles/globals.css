@@ -643,6 +643,45 @@ h2 {
   margin-top: 12px;
 }
 
+.scannerGrid {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.scannerGrid div {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.68), rgba(2, 6, 23, 0.42));
+  min-width: 0;
+  padding: 10px;
+}
+
+.scannerGrid span {
+  color: #94a3b8;
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.scannerGrid strong {
+  color: #f8fafc;
+  display: block;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 18px;
+  margin-top: 7px;
+  overflow-wrap: anywhere;
+}
+
+.scannerGrid small {
+  color: #94a3b8;
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+  margin-top: 5px;
+}
+
 .filterGrid label {
   border: 1px solid var(--line);
   background: rgba(0, 0, 0, 0.18);
@@ -981,6 +1020,7 @@ h2 {
   .factorGrid,
   .briefGrid,
   .filterGrid,
+  .scannerGrid,
   .topPickGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
