@@ -134,6 +134,25 @@ DEFAULT_CUSTOM_UNIVERSE = [
     "NFLX",
 ]
 
+CACHE_TTL_SECONDS = 900
+_CACHE: dict[str, tuple[float, Any]] = {}
+
+
+def _cache_get(key: str) -> Any | None:
+    cached = _CACHE.get(key)
+    if not cached:
+        return None
+    expires_at, value = cached
+    if datetime.now(UTC).timestamp() > expires_at:
+        _CACHE.pop(key, None)
+        return None
+    return value
+
+
+def _cache_set(key: str, value: Any, ttl_seconds: int = CACHE_TTL_SECONDS) -> Any:
+    _CACHE[key] = (datetime.now(UTC).timestamp() + ttl_seconds, value)
+    return value
+
 
 @dataclass
 class IndicatorPack:
@@ -324,6 +343,11 @@ def _fetch_yahoo_search_news(ticker: str, limit: int) -> list[dict[str, Any]]:
 
 
 def _fetch_news_items(ticker: str, limit: int = 8) -> list[dict[str, Any]]:
+    cache_key = f"news:{ticker.upper()}:{limit}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     raw_items: list[dict[str, Any]] = []
     try:
         raw_items = yf.Ticker(ticker).news or []
@@ -350,7 +374,7 @@ def _fetch_news_items(ticker: str, limit: int = 8) -> list[dict[str, Any]]:
         if len(normalized) >= limit:
             break
 
-    return normalized
+    return _cache_set(cache_key, normalized)
 
 
 def _safe_info_number(info: dict[str, Any], key: str) -> float | None:
@@ -849,8 +873,14 @@ def _score_opportunity(ind: IndicatorPack) -> dict[str, Any]:
 
 
 def _analyze_symbol(symbol: str) -> dict[str, Any]:
-    history_1y = _download_history(symbol, "1y")
-    history_3mo = _download_history(symbol, "3mo")
+    normalized_symbol = symbol.strip().upper()
+    cache_key = f"analysis:{normalized_symbol}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    history_1y = _download_history(normalized_symbol, "1y")
+    history_3mo = _download_history(normalized_symbol, "3mo")
     indicators = _calculate_indicators(history_1y, history_3mo)
     opportunity = _score_opportunity(indicators)
     chart_series = _build_chart_series(history_1y, opportunity)
@@ -862,8 +892,8 @@ def _analyze_symbol(symbol: str) -> dict[str, Any]:
         else 0.0
     )
 
-    return {
-        "ticker": symbol,
+    result = {
+        "ticker": normalized_symbol,
         "current_price": indicators.current_price,
         "previous_close": previous_close,
         "daily_change_percent": daily_change_percent,
@@ -885,6 +915,7 @@ def _analyze_symbol(symbol: str) -> dict[str, Any]:
         **opportunity,
         "disclaimer": "For research and educational purposes only. Not financial advice.",
     }
+    return _cache_set(cache_key, result)
 
 
 def _build_catalyst_note(analysis: dict[str, Any]) -> str:
@@ -1016,6 +1047,15 @@ def _rank_opportunities(
     signals: set[str] | None = None,
     max_risk: str = "ANY",
 ) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    cache_key = (
+        "rank:"
+        f"{','.join(symbols)}:{limit}:{include_news}:{min_score}:{min_risk_reward}:"
+        f"{','.join(sorted(signals)) if signals else 'ALL'}:{max_risk.upper()}"
+    )
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     candidates: list[dict[str, Any]] = []
     errors: list[dict[str, str]] = []
     risk_rank = {"LOW": 1, "MEDIUM": 2, "HIGH": 3}
@@ -1093,10 +1133,14 @@ def _rank_opportunities(
     for index, item in enumerate(ranked, start=1):
         item["rank"] = index
 
-    return ranked, errors
+    return _cache_set(cache_key, (ranked, errors), ttl_seconds=600)
 
 
 def _build_market_regime() -> dict[str, Any]:
+    cached = _cache_get("market_regime")
+    if cached is not None:
+        return cached
+
     symbols = ["SPY", "QQQ", "^VIX"]
     regime: dict[str, Any] = {
         "label": "Mixed market",
@@ -1141,7 +1185,7 @@ def _build_market_regime() -> dict[str, Any]:
     except Exception:
         return regime
 
-    return regime
+    return _cache_set("market_regime", regime, ttl_seconds=600)
 
 
 def _classify_time_horizon(analysis: dict[str, Any]) -> str:

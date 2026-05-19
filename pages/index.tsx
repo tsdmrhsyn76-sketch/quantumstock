@@ -316,7 +316,7 @@ export default function Home() {
   const signal = result?.signal ?? activeRow.signal;
   const topOpportunity = opportunities[0] ?? weeklyReport?.top_idea ?? null;
   const scannerUniverse = weeklyReport?.universe_name ?? "NASDAQ-100";
-  const scannerCount = weeklyReport?.scanned_count ?? 40;
+  const scannerCount = weeklyReport?.scanned_count ?? 30;
   const scannerDecision = committeeReport?.recommended_action ?? "Rank opportunities and wait for confirmation";
   const marketRegime = weeklyReport?.market_regime;
   const marketAction =
@@ -536,26 +536,57 @@ export default function Home() {
       try {
         const params = new URLSearchParams({
           universe: "NASDAQ100",
-          scan_limit: "40",
+          scan_limit: "30",
           limit: "10",
           min_score: String(minScore),
           min_rr: String(minRiskReward),
           signal: signalFilter,
           max_risk: maxRisk,
         });
-        const [weeklyResponse, committeeResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/weekly-report?${params.toString()}`),
-          fetch(`${API_BASE_URL}/api/investment-committee-report?${params.toString()}`),
-        ]);
+        const weeklyResponse = await fetch(`${API_BASE_URL}/api/weekly-report?${params.toString()}`);
         const data = await weeklyResponse.json();
-        const committeeData = await committeeResponse.json();
         if (!weeklyResponse.ok) {
           throw new Error(data.detail || "Weekly report scan failed.");
         }
+        const rows: OpportunityRow[] = data.results ?? [];
+        const buyCount = rows.filter((item) => item.signal === "BUY").length;
+        const watchCount = rows.filter((item) => item.signal === "WATCH").length;
+        const highRiskCount = rows.filter((item) => item.risk_level === "HIGH").length;
+        const derivedCommittee: CommitteeReport = {
+          generated_at: data.generated_at,
+          title: "QuantumStock Investment Committee Snapshot",
+          recommended_action:
+            data.market_regime?.risk_state === "Constructive" && buyCount
+              ? "Consider staged exposure only in the highest-quality setups"
+              : highRiskCount >= 4
+                ? "Stay defensive; high-risk concentration is elevated"
+                : "Build watchlist and wait for cleaner entry confirmation",
+          sections: [
+            {
+              title: "Executive View",
+              body:
+                data.summary ??
+                "The opportunity book is built from the current NASDAQ-100 scan and filtered through risk/reward discipline.",
+            },
+            {
+              title: "Opportunity Book",
+              body: `${buyCount} BUY, ${watchCount} WATCH, and ${highRiskCount} high-risk candidate(s) were identified across ${data.scanned_count ?? 30} scanned names.`,
+            },
+          ],
+          allocation_notes: rows.slice(0, 3).map((item) => ({
+            ticker: item.ticker,
+            stance: item.signal === "BUY" ? "candidate for staged allocation" : "watch for entry confirmation",
+            score: item.quality_score,
+            risk: item.risk_level,
+            entry_zone: item.entry_zone,
+            stop_loss: item.stop_loss,
+            target_1: item.target_1,
+          })),
+        };
         if (!ignore) {
-          setOpportunities(data.results ?? []);
+          setOpportunities(rows);
           setWeeklyReport(data);
-          setCommitteeReport(committeeResponse.ok ? committeeData : null);
+          setCommitteeReport(derivedCommittee);
           setOpportunitiesError("");
         }
       } catch (err) {
@@ -812,14 +843,14 @@ export default function Home() {
                   <span>Why It Ranks</span>
                   <p>
                     {topOpportunity
-                      ? `${topOpportunity.ticker} ranks highest after scanning ${weeklyReport?.scanned_count ?? 40} NASDAQ-100 names and blending AI score, signal quality, risk/reward, upside, and catalyst tone.`
+                      ? `${topOpportunity.ticker} ranks highest after scanning ${weeklyReport?.scanned_count ?? 30} NASDAQ-100 names and blending AI score, signal quality, risk/reward, upside, and catalyst tone.`
                       : "The system scans a broad NASDAQ-100 universe and ranks the strongest 10 qualified opportunities automatically."}
                   </p>
                 </div>
                 <div>
                   <span>Universe</span>
                   <p>
-                    {weeklyReport?.universe_name ?? "NASDAQ-100"} coverage · {weeklyReport?.scanned_count ?? 40} names scanned for this MVP run.
+                    {weeklyReport?.universe_name ?? "NASDAQ-100"} coverage · {weeklyReport?.scanned_count ?? 30} names scanned for this MVP run.
                   </p>
                 </div>
                 <div>
@@ -1034,7 +1065,7 @@ export default function Home() {
                 <span>
                   {opportunitiesLoading
                     ? "Scanning NASDAQ-100"
-                    : `${opportunities.length} ranked names · ${weeklyReport?.scanned_count ?? 40} scanned`}
+                    : `${opportunities.length} ranked names · ${weeklyReport?.scanned_count ?? 30} scanned`}
                 </span>
               </div>
               {opportunitiesError ? <p className="watchError">{opportunitiesError}</p> : null}
