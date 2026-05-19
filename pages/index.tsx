@@ -58,7 +58,9 @@ type OpportunityRow = {
   risk_level: string;
   risk_reward_ratio: number;
   entry_zone: { low: number; high: number };
+  stop_loss: number;
   target_1: number;
+  target_2: number;
   catalyst: string;
   catalyst_score: number;
   catalyst_count: number;
@@ -888,12 +890,14 @@ export default function Home() {
                 <div className="opportunityRow head">
                   <span>Rank</span>
                   <span>Ticker</span>
-                  <span>Blend</span>
-                  <span>AI</span>
+                  <span>Decision</span>
+                  <span>Score</span>
+                  <span>Entry</span>
+                  <span>Stop</span>
+                  <span>TP1</span>
+                  <span>TP2</span>
                   <span>Upside</span>
                   <span>R/R</span>
-                  <span>Cat</span>
-                  <span>Headline</span>
                 </div>
                 {(opportunities.length ? opportunities : []).map((item) => (
                   <button
@@ -904,17 +908,21 @@ export default function Home() {
                   >
                     <b>#{item.rank}</b>
                     <strong>{item.ticker}</strong>
+                    <small>
+                      <b>{decisionLabel(item)}</b>
+                      {item.signal} · {item.risk_level}
+                    </small>
                     <span>{item.quality_score}</span>
-                    <span>{item.opportunity_score}</span>
+                    <span>
+                      {formatCurrency(item.entry_zone.low)} - {formatCurrency(item.entry_zone.high)}
+                    </span>
+                    <span>{formatCurrency(item.stop_loss)}</span>
+                    <span>{formatCurrency(item.target_1)}</span>
+                    <span>{formatCurrency(item.target_2)}</span>
                     <span className={item.expected_upside_percent >= 0 ? "up" : "down"}>
                       {item.expected_upside_percent}%
                     </span>
-                    <span>{item.risk_reward_ratio}</span>
-                    <em>{item.catalyst_score}</em>
-                    <small>
-                      <b>{decisionLabel(item)}</b>
-                      {item.top_headline || item.catalyst}
-                    </small>
+                    <em>{item.risk_reward_ratio}x</em>
                   </button>
                 ))}
                 {!opportunities.length && !opportunitiesLoading ? (
@@ -994,8 +1002,8 @@ export default function Home() {
 
           <aside className="panel modelPanel">
             <div className="panelHead">
-              <p className="eyebrow">Model Explanation</p>
-              <span>AI reasoning layer</span>
+              <p className="eyebrow">Quant Analyst Memo</p>
+              <span>Opportunity reasoning</span>
             </div>
             <h2>{selectedTicker} Research Notes</h2>
             <ul>
@@ -1015,7 +1023,7 @@ export default function Home() {
             </div>
             <div className="memoPanel">
               <div className="panelHead compact">
-                <p className="eyebrow">AI Research Memo</p>
+                <p className="eyebrow">Analyst Reasoning</p>
                 <span>{memoLoading ? "Generating" : researchMemo?.time_horizon ?? "Rule-based"}</span>
               </div>
               {memoError ? <p className="watchError">{memoError}</p> : null}
@@ -1029,6 +1037,10 @@ export default function Home() {
                     </div>
                   </div>
                   <p>{researchMemo.summary}</p>
+                  <div className="memoSection">
+                    <span>Entry Logic</span>
+                    <p>{researchMemo.entry_logic}</p>
+                  </div>
                   <div className="memoSection">
                     <span>Why Attractive</span>
                     <ul>

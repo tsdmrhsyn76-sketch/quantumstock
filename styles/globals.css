@@ -367,13 +367,13 @@ h2 {
 
 .opportunityRow {
   display: grid;
-  grid-template-columns: 46px 70px 58px 48px 72px 52px 52px minmax(220px, 1fr);
+  grid-template-columns: 42px 62px minmax(118px, 1.2fr) 56px minmax(112px, 1fr) 72px 72px 72px 62px 54px;
   gap: 8px;
   align-items: center;
   width: 100%;
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.025);
-  padding: 8px;
+  padding: 7px 8px;
   text-align: left;
 }
 
@@ -394,8 +394,8 @@ h2 {
 .opportunityRow span,
 .opportunityRow small {
   color: var(--muted);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: 10px;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
@@ -409,6 +409,11 @@ h2 {
 .opportunityRow b,
 .opportunityRow strong {
   font-family: Menlo, Consolas, monospace;
+}
+
+.opportunityRow strong {
+  color: #f8fafc;
+  font-size: 12px;
 }
 
 .opportunityRow em {
@@ -1057,6 +1062,6 @@ h2 {
   }
 
   .opportunityRow {
-    min-width: 860px;
+    min-width: 980px;
   }
 }
