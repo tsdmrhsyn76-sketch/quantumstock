@@ -1260,3 +1260,177 @@ h2 {
     min-width: 980px;
   }
 }
+
+.investorShell {
+  margin: 0 auto;
+  max-width: 1320px;
+  padding: 16px;
+}
+
+.investorHero,
+.investorPanel,
+.investorSection,
+.revenueGrid article,
+.summaryBand {
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(11, 21, 33, 0.92), rgba(4, 9, 15, 0.94));
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
+}
+
+.investorHero {
+  min-height: 520px;
+  padding: 18px;
+  display: grid;
+  align-content: space-between;
+  gap: 28px;
+}
+
+.investorHero nav {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.investorHero nav a,
+.investorHero nav span {
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.investorHero h1 {
+  max-width: 900px;
+  font-size: clamp(40px, 7vw, 86px);
+  line-height: 0.94;
+}
+
+.investorHero p:not(.kicker),
+.sectionHead p,
+.investorPanel p,
+.revenueGrid p {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.investorHero p:not(.kicker) {
+  max-width: 680px;
+}
+
+.investorStats,
+.investorGrid,
+.revenueGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.investorStats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.investorStats div,
+.summaryBand {
+  border: 1px solid rgba(245, 158, 11, 0.18);
+  background: rgba(245, 158, 11, 0.06);
+  padding: 12px;
+}
+
+.investorStats span,
+.revenueGrid span {
+  color: #fbbf24;
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.investorStats strong,
+.summaryBand strong {
+  color: #f8fafc;
+  display: block;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 18px;
+  margin-top: 7px;
+}
+
+.investorGrid,
+.investorSection {
+  margin-top: 12px;
+}
+
+.investorPanel,
+.investorSection {
+  padding: 16px;
+}
+
+.investorPanel h2,
+.sectionHead h2 {
+  font-size: 26px;
+  line-height: 1.08;
+  margin-top: 8px;
+}
+
+.investorPanel ul,
+.investorPanel ol {
+  color: #cbd5e1;
+  line-height: 1.65;
+  margin: 12px 0 0;
+  padding-left: 20px;
+}
+
+.revenueGrid {
+  margin-top: 14px;
+}
+
+.revenueGrid article {
+  padding: 14px;
+}
+
+.revenueGrid h3 {
+  color: #f8fafc;
+  font-size: 17px;
+  margin: 10px 0 0;
+}
+
+.summaryBand {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.summaryBand span {
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+@media (min-width: 820px) {
+  .investorGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .investorPanel.large {
+    grid-column: span 2;
+  }
+
+  .revenueGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .investorStats,
+  .summaryBand {
+    grid-template-columns: 1fr;
+  }
+
+  .investorStats,
+  .summaryBand {
+    display: grid;
+  }
+}
