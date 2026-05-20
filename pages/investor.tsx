@@ -1,10 +1,36 @@
 import Head from "next/head";
 
 const thesisMetrics = [
-  { label: "Product wedge", value: "AI equity research terminal" },
-  { label: "Initial market", value: "Active investors + advisors" },
-  { label: "Model", value: "SaaS, B2B, API licensing" },
-  { label: "Long-term path", value: "Investment intelligence OS" },
+  { label: "Real-Time Data", value: "Live market analysis" },
+  { label: "AI Insights", value: "Explainable research" },
+  { label: "Risk Engine", value: "Entry, stop, targets" },
+  { label: "Optimized Decisions", value: "Ranked opportunities" },
+];
+
+const heroFeatures = [
+  {
+    title: "AI Analyst",
+    text: "Analyst-style reasoning explains why a stock is attractive, what is risky, and what to monitor next.",
+  },
+  {
+    title: "Quant Models",
+    text: "Momentum, trend, volatility, volume, support, resistance, and risk/reward are evaluated together.",
+  },
+  {
+    title: "Risk Management",
+    text: "Model trade plans define entry zones, invalidation levels, upside targets, and portfolio posture.",
+  },
+  {
+    title: "Actionable Signals",
+    text: "NASDAQ opportunities are ranked into clear watch, wait, and allocation-ready research outputs.",
+  },
+];
+
+const terminalSignals = [
+  { ticker: "NVDA", signal: "BUY", score: "92", upside: "+11.7%" },
+  { ticker: "AMD", signal: "WATCH", score: "88", upside: "+9.3%" },
+  { ticker: "MSFT", signal: "WATCH", score: "84", upside: "+6.8%" },
+  { ticker: "AVGO", signal: "BUY", score: "81", upside: "+8.1%" },
 ];
 
 const revenueStreams = [
@@ -150,34 +176,106 @@ export default function InvestorPage() {
       <main className="investorShell">
         <header className="investorHero">
           <nav className="investorNav" aria-label="Investor navigation">
-            <a href="/">Terminal</a>
-            <span>Investor Overview</span>
+            <span className="brandMark">Quantum<span>Stock</span></span>
+            <div>
+              <a href="/">Terminal</a>
+              <span>Investor Overview</span>
+            </div>
           </nav>
 
           <section className="investorHeroGrid">
             <div className="investorHeroCopy">
               <p className="kicker">QuantumStock</p>
-              <h1>AI-native equity research infrastructure for the next generation of investors.</h1>
+              <h1>
+                AI-powered <span>investment intelligence</span>
+              </h1>
               <p>
-                QuantumStock turns market data, technical signals, company context, and risk discipline into a
-                repeatable research workflow. The first product is a premium AI investment terminal; the larger
-                opportunity is a licensed intelligence layer for advisors, publishers, fintech platforms, and boutique
-                institutions.
+                Institutional-grade analytics, AI-driven insights, and disciplined risk models for smarter equity
+                research decisions.
               </p>
+              <div className="heroFeatureList">
+                {heroFeatures.map((item) => (
+                  <article key={item.title}>
+                    <i aria-hidden="true" />
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p>{item.text}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
               <div className="investorActions">
-                <a href="#summary">Investor Summary</a>
+                <a href="/">Open Terminal</a>
                 <a href="#revenue">Revenue Model</a>
               </div>
             </div>
 
-            <aside className="investorBrief" aria-label="Investment thesis">
-              <span>Investment Thesis</span>
-              <strong>From stock scanner to institutional research OS</strong>
-              <p>
-                The product begins with high-frequency research pain: finding quality opportunities, understanding risk,
-                and explaining the setup quickly. That wedge can expand into saved workflows, team seats, APIs, and
-                white-label research infrastructure.
-              </p>
+            <aside className="terminalPreview" aria-label="QuantumStock terminal preview">
+              <div className="previewTopbar">
+                <b>QuantumStock OS</b>
+                <span>Dashboard</span>
+                <span>Markets</span>
+                <span>Portfolio</span>
+                <em>Pro</em>
+              </div>
+              <div className="previewTape">
+                {["SPY +0.68%", "QQQ +0.72%", "VIX -1.34%", "NVDA +2.08%"].map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
+              <div className="previewGrid">
+                <section className="previewOpportunity">
+                  <small>Top Opportunity</small>
+                  <strong>NVDA</strong>
+                  <span>$912.48</span>
+                  <em>BUY</em>
+                  <div>
+                    <b>AI Score 92</b>
+                    <b>Momentum 91</b>
+                    <b>Risk 28</b>
+                  </div>
+                </section>
+                <section className="previewChart">
+                  <small>Price Chart</small>
+                  <svg viewBox="0 0 320 150" aria-hidden="true">
+                    <path d="M0 120 H320 M0 88 H320 M0 56 H320 M0 24 H320" />
+                    <polyline points="4,118 30,96 58,100 86,72 112,84 140,54 168,62 196,38 224,44 252,20 280,32 316,16" />
+                    <rect x="20" y="112" width="8" height="24" />
+                    <rect x="52" y="102" width="8" height="34" />
+                    <rect x="84" y="118" width="8" height="18" />
+                    <rect x="116" y="88" width="8" height="48" />
+                    <rect x="148" y="96" width="8" height="40" />
+                    <rect x="180" y="74" width="8" height="62" />
+                    <rect x="212" y="82" width="8" height="54" />
+                    <rect x="244" y="60" width="8" height="76" />
+                    <rect x="276" y="72" width="8" height="64" />
+                  </svg>
+                </section>
+                <section className="previewAnalyst">
+                  <small>AI Analyst</small>
+                  <p>
+                    Momentum remains constructive above key moving averages. Position sizing should respect elevated
+                    volatility and earnings risk.
+                  </p>
+                </section>
+                <section className="previewTradePlan">
+                  <small>Trade Plan</small>
+                  <p>Entry $900 - $915</p>
+                  <p>Stop $865</p>
+                  <p>Target $950 / $1,020</p>
+                  <p>R/R 2.8x</p>
+                </section>
+              </div>
+              <div className="previewSignals">
+                {terminalSignals.map((item) => (
+                  <span key={item.ticker}>
+                    <b>{item.ticker}</b>
+                    <em>{item.signal}</em>
+                    <strong>{item.score}</strong>
+                    <i>{item.upside}</i>
+                  </span>
+                ))}
+              </div>
             </aside>
           </section>
 
