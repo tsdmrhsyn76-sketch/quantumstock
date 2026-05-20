@@ -1,5 +1,6 @@
 import Head from "next/head";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { navItems, newsData as sampleNewsData } from "../lib/product-data";
 
 type AnalyzeResult = {
   ticker: string;
@@ -475,6 +476,18 @@ export default function Home() {
   const analysisDataState = result ? "Live analysis" : loading ? "Loading live data" : "Watchlist proxy";
   const chartDataState = result?.charts ? "Live/recent price data" : "Sample trend preview";
   const tradePlanDataState = tradePlanSource ? "Calculated by model" : "Run analysis required";
+  const terminalNewsItems = newsItems.length
+    ? newsItems.slice(0, 4).map((item) => ({
+        title: item.title,
+        source: item.source || "Market feed",
+        url: item.url,
+        category: item.catalyst_type || "Market",
+        ticker: selectedTicker,
+        sentiment: "Live",
+        time: item.published_at ? "Recent" : "Latest",
+        isSample: false,
+      }))
+    : sampleNewsData.slice(0, 4).map((item) => ({ ...item, url: "/news", isSample: true }));
 
   const chartData = useMemo(() => {
     if (result?.charts) {
@@ -821,17 +834,17 @@ export default function Home() {
             Quantum<strong>Stock</strong>
           </a>
           <nav className="qsNav" aria-label="Terminal navigation">
-            {["Overview", "Market Pulse", "Stock Screener", "Quant Signals", "AI Analytics", "Portfolio Risk", "Backtesting", "Alerts", "News Feed", "Economic Calendar", "Settings"].map((item, index) => (
-              <button className={index === 0 ? "active" : ""} key={item} type="button">
-                <i aria-hidden="true">{item.slice(0, 1)}</i>
-                {item}
-              </button>
+            {navItems.map((item, index) => (
+              <a className={index === 0 ? "active" : ""} href={item.href} key={item.href}>
+                <i aria-hidden="true">{item.label.slice(0, 1)}</i>
+                {item.label}
+              </a>
             ))}
           </nav>
           <div className="premiumCard">
             <b>Unlock Premium</b>
             <p>Get advanced analytics, real-time signals, and portfolio insights.</p>
-            <button type="button">Upgrade Now</button>
+            <a href="/settings">Upgrade Now</a>
           </div>
           <div className="userCard">
             <span>Quantum User</span>
@@ -851,6 +864,7 @@ export default function Home() {
               <button disabled={loading} type="submit">{loading ? "..." : "Run"}</button>
             </form>
             <div className="qsTopActions">
+              <a href="/investor">Investor</a>
               <span>☼</span>
               <span>◌</span>
               <b>Pro</b>
@@ -869,6 +883,7 @@ export default function Home() {
           <div className="dataStateBar">
             <span><b>Live</b> ticker analysis, watchlist, opportunity scanner, research memo, company profile, news</span>
             <span><b>Sample</b> market tape, portfolio exposure allocation, broad sentiment split</span>
+            <span><b>Notice</b> Sample data shown. Live data integration in progress.</span>
           </div>
 
           {error ? <div className="errorBox">{error}</div> : null}
@@ -877,7 +892,7 @@ export default function Home() {
             <article className="qsCard topOpportunityCard">
               <div className="qsCardHead">
                 <span>Top Opportunity</span>
-                <button type="button">{analysisDataState}</button>
+                <em className="statusPill">{analysisDataState}</em>
               </div>
               <h2>{selectedTicker}</h2>
               <p>{companyProfile?.company_name ?? `${selectedTicker} research book`}</p>
@@ -886,7 +901,7 @@ export default function Home() {
                 <span>USD</span>
               </div>
               <em className={activeRow.change >= 0 ? "up" : "down"}>{activeRow.change >= 0 ? "+" : ""}{activeRow.change.toFixed(2)}%</em>
-              <button className={signalClass(signal)} type="button">{signal}</button>
+              <span className={`signalPill ${signalClass(signal)}`}>{signal}</span>
               <div className="scoreMiniGrid">
                 <span><b>{score}</b>AI Score</span>
                 <span><b>{result?.trend_score ?? 70}</b>Trend</span>
@@ -976,7 +991,7 @@ export default function Home() {
               <div><span>Portfolio Risk Score</span><strong>{portfolioRisk.highRiskPercent || 32}/100</strong></div>
               <div><span>Volatility (30D)</span><strong>{volatility}%</strong></div>
               <div><span>Risk Posture</span><strong>{portfolioRisk.posture}</strong></div>
-              <button type="button">View Full Risk Report</button>
+              <a href="/portfolio-risk">View Full Risk Report</a>
             </article>
           </section>
 
@@ -1013,15 +1028,19 @@ export default function Home() {
             </article>
 
             <article className="qsCard newsTerminalCard">
-              <div className="qsCardHead"><span>News & Insights</span><a href="/investor">View All</a></div>
+              <div className="qsCardHead"><span>News & Insights</span><a href="/news">View All News</a></div>
+              <p className="newsDataNote">{newsItems.length ? "Live/recent market headlines" : "Sample news shown until live headlines load"}</p>
               <div className="terminalNewsList">
-                {(newsItems.length ? newsItems.slice(0, 4) : []).map((item) => (
+                {terminalNewsItems.map((item) => (
                   <a href={item.url || "#"} key={item.title} rel="noreferrer" target="_blank">
-                    <b>{item.catalyst_type.slice(0, 2)}</b>
-                    <span>{item.title}<small>{item.source}</small></span>
+                    <b>{item.ticker}</b>
+                    <span>
+                      {item.title}
+                      <small>{item.category} · {item.source} · {item.time} · {item.sentiment}{item.isSample ? " · Sample" : ""}</small>
+                    </span>
                   </a>
                 ))}
-                {!newsItems.length ? <p className="emptyState">No recent catalyst headlines returned for {selectedTicker}.</p> : null}
+                {newsError ? <p className="emptyState">{newsError}</p> : null}
               </div>
             </article>
           </section>
