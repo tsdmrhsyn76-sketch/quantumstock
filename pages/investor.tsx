@@ -52,6 +52,44 @@ const packages = [
   },
 ];
 
+const growthProjection = [
+  { year: "Year 1", subscribers: "1,000", arr: "$0.7M", growth: "Launch year", focus: "Paid MVP, conversion, retention" },
+  { year: "Year 2", subscribers: "5,000", arr: "$3.8M", growth: "5.0x", focus: "Pro subscriptions, alerts, saved portfolios" },
+  { year: "Year 3", subscribers: "18,000", arr: "$15M", growth: "3.9x", focus: "Advisor seats, reports, team workflows" },
+  { year: "Year 4", subscribers: "45,000", arr: "$44M", growth: "2.9x", focus: "B2B licenses, API pilots, enterprise sales" },
+  { year: "Year 5", subscribers: "100,000", arr: "$110M", growth: "2.5x", focus: "Platform scale, white-label distribution" },
+];
+
+const fundingUse = [
+  {
+    title: "Product & Engineering",
+    allocation: "40%",
+    text: "Accounts, saved portfolios, alerts, research export, portfolio analytics, AI copilot, and production-grade infrastructure.",
+  },
+  {
+    title: "Data & AI Infrastructure",
+    allocation: "25%",
+    text: "Premium market data providers, news/catalyst feeds, model evaluation, scoring improvements, uptime, and security.",
+  },
+  {
+    title: "Growth & Distribution",
+    allocation: "20%",
+    text: "Investor acquisition, financial creator partnerships, advisor outreach, content engine, and conversion experiments.",
+  },
+  {
+    title: "Operations & Compliance",
+    allocation: "15%",
+    text: "Legal review, disclaimers, finance operations, customer support, documentation, and institutional sales readiness.",
+  },
+];
+
+const currentStage = [
+  "MVP is live: public frontend, deployed backend API, and a working AI research terminal experience.",
+  "Core workflows exist: ticker analysis, NASDAQ opportunity ranking, market regime, portfolio risk posture, and analyst memo.",
+  "Current need: turn the MVP into a paid product with accounts, saved workflows, alerts, stronger data, and customer analytics.",
+  "Investment goal: fund 12-18 months of product, data, growth, and operating runway to validate paid retention and B2B demand.",
+];
+
 const marketOpportunity = [
   {
     title: "Fragmented research workflow",
@@ -221,6 +259,76 @@ export default function InvestorPage() {
                     <li key={feature}>{feature}</li>
                   ))}
                 </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="investorSection projectionSection">
+          <div className="sectionHead">
+            <p className="eyebrow">Projected Growth Model</p>
+            <h2>Illustrative five-year scenario built around subscriptions, professional seats, and B2B expansion.</h2>
+            <p>
+              These are planning assumptions, not guaranteed results. The model shows how QuantumStock could scale if
+              product retention, paid conversion, data quality, and distribution partnerships improve year by year.
+            </p>
+          </div>
+
+          <div className="projectionTable" aria-label="Five year growth projection">
+            <div className="projectionRow projectionHead">
+              <span>Year</span>
+              <span>Paid Subscribers</span>
+              <span>Estimated ARR</span>
+              <span>Growth</span>
+              <span>Operating Focus</span>
+            </div>
+            {growthProjection.map((item) => (
+              <div className="projectionRow" key={item.year}>
+                <strong>{item.year}</strong>
+                <span>{item.subscribers}</span>
+                <span>{item.arr}</span>
+                <span>{item.growth}</span>
+                <p>{item.focus}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="investorGrid fundingGrid">
+          <article className="investorPanel large">
+            <p className="eyebrow">Current Stage</p>
+            <h2>QuantumStock is in live MVP stage and ready for productization.</h2>
+            <div className="summaryGrid stageGrid">
+              {currentStage.map((item) => (
+                <div key={item}>
+                  <span />
+                  <p>{item}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="investorPanel">
+            <p className="eyebrow">Investment Need</p>
+            <h2>Target raise: $500K - $1.5M pre-seed / seed.</h2>
+            <p>
+              Capital would be used to move from impressive prototype to commercial product: paid accounts, better data,
+              retention loops, customer acquisition, and B2B sales preparation.
+            </p>
+          </article>
+        </section>
+
+        <section className="investorSection">
+          <div className="sectionHead">
+            <p className="eyebrow">Use of Funds</p>
+            <h2>Investment converts directly into product depth, data quality, distribution, and operational readiness.</h2>
+          </div>
+          <div className="fundingUseGrid">
+            {fundingUse.map((item) => (
+              <article key={item.title}>
+                <span>{item.allocation}</span>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
               </article>
             ))}
           </div>

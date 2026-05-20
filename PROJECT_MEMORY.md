@@ -63,6 +63,13 @@ This is for research and educational purposes only. It is not financial advice.
 ## Completed Product Direction
 The main terminal should remain clean and operational. Avoid overloading it with investor/business content. Investor materials should live on a separate page, starting with `/investor`.
 
+## Investor Page Updates
+- `/investor` now has a premium investor overview layout.
+- Added professional investment thesis, problem, solution, differentiation, revenue model, subscription packages, market opportunity, roadmap, and investor summary.
+- Added a five-year illustrative growth model with year-by-year paid subscribers, estimated ARR, growth rate, and operating focus.
+- Added current project stage, target investment need, and use-of-funds allocation.
+- Main terminal at `/` should remain untouched when improving investor/business content.
+
 ## Next Planned Page
 Investor / Business Model page:
 - What QuantumStock is
