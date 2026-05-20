@@ -79,6 +79,8 @@ type NewsItem = {
   catalyst_type: string;
 };
 
+type ChartRange = "1D" | "1W" | "1M" | "3M" | "1Y";
+
 type WeeklyReport = {
   generated_at: string;
   summary: string;
@@ -347,6 +349,7 @@ export default function Home() {
   const [minRiskReward, setMinRiskReward] = useState(0);
   const [signalFilter, setSignalFilter] = useState("ALL");
   const [maxRisk, setMaxRisk] = useState("ANY");
+  const [chartRange, setChartRange] = useState<ChartRange>("1M");
   const [assistantInput, setAssistantInput] = useState("");
   const [assistantMessages, setAssistantMessages] = useState([
     {
@@ -502,13 +505,30 @@ export default function Home() {
 
     const base = score;
     return {
-      price: [activeRow.price * 0.93, activeRow.price * 0.96, activeRow.price * 0.95, activeRow.price * 0.99, activeRow.price * 1.02, activeRow.price],
+      price: Array.from({ length: 52 }, (_, index) => {
+        const trend = 0.9 + index * 0.0038;
+        const cycle = Math.sin(index / 2.7) * 0.021;
+        const pullback = index > 26 && index < 34 ? -0.035 : 0;
+        const recovery = index > 38 ? 0.018 : 0;
+        return activeRow.price * (trend + cycle + pullback + recovery);
+      }),
       ai: [base - 13, base - 8, base - 10, base - 4, base - 2, base + 1, base],
       momentum: [momentum - 16, momentum - 7, momentum - 10, momentum - 3, momentum + 4, momentum + 1, momentum],
       volatility: [volatility + 5, volatility + 1, volatility + 8, volatility - 2, volatility + 3, volatility - 4, volatility],
       backtest: [100, 103, 106, 104, 111, 116, 123, 128, 126, 134],
     };
   }, [activeRow.price, momentum, result, score, volatility]);
+
+  const visiblePriceData = useMemo(() => {
+    const windowSize: Record<ChartRange, number> = {
+      "1D": 8,
+      "1W": 14,
+      "1M": 24,
+      "3M": 38,
+      "1Y": chartData.price.length,
+    };
+    return chartData.price.slice(-windowSize[chartRange]);
+  }, [chartData.price, chartRange]);
 
   const assistantBullets = useMemo(() => {
     if (!result) {
@@ -912,9 +932,21 @@ export default function Home() {
             <article className="qsCard chartTerminalCard">
               <div className="qsCardHead">
                 <span>Price Chart</span>
-                <div className="chartTabs"><em>{chartDataState}</em><b>1D</b><b>1W</b><b>1M</b><b>3M</b><b>1Y</b></div>
+                <div className="chartTabs">
+                  <em>{chartDataState}</em>
+                  {(["1D", "1W", "1M", "3M", "1Y"] as ChartRange[]).map((range) => (
+                    <button
+                      className={chartRange === range ? "active" : ""}
+                      key={range}
+                      onClick={() => setChartRange(range)}
+                      type="button"
+                    >
+                      {range}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <TerminalPriceChart data={chartData.price} />
+              <TerminalPriceChart data={visiblePriceData} />
             </article>
 
             <article className="qsCard aiTerminalCard">
