@@ -63,12 +63,12 @@ const growthProjection = [
 const fundingUse = [
   {
     title: "Product & Engineering",
-    allocation: "40%",
-    text: "Accounts, saved portfolios, alerts, research export, portfolio analytics, AI copilot, and production-grade infrastructure.",
+    allocation: "35%",
+    text: "Accounts, saved portfolios, alerts, research export, portfolio analytics, AI copilot, billing, and production-grade infrastructure.",
   },
   {
     title: "Data & AI Infrastructure",
-    allocation: "25%",
+    allocation: "30%",
     text: "Premium market data providers, news/catalyst feeds, model evaluation, scoring improvements, uptime, and security.",
   },
   {
@@ -77,7 +77,7 @@ const fundingUse = [
     text: "Investor acquisition, financial creator partnerships, advisor outreach, content engine, and conversion experiments.",
   },
   {
-    title: "Operations & Compliance",
+    title: "Operations, Compliance & Security",
     allocation: "15%",
     text: "Legal review, disclaimers, finance operations, customer support, documentation, and institutional sales readiness.",
   },
@@ -87,7 +87,7 @@ const currentStage = [
   "MVP is live: public frontend, deployed backend API, and a working AI research terminal experience.",
   "Core workflows exist: ticker analysis, NASDAQ opportunity ranking, market regime, portfolio risk posture, and analyst memo.",
   "Current need: turn the MVP into a paid product with accounts, saved workflows, alerts, stronger data, and customer analytics.",
-  "Investment goal: fund 12-18 months of product, data, growth, and operating runway to validate paid retention and B2B demand.",
+  "Investment goal: fund 18-24 months of product, data, AI infrastructure, growth, and operating runway to validate paid retention and B2B demand.",
 ];
 
 const marketOpportunity = [
@@ -310,10 +310,10 @@ export default function InvestorPage() {
 
           <article className="investorPanel">
             <p className="eyebrow">Investment Need</p>
-            <h2>Target raise: $500K - $1.5M pre-seed / seed.</h2>
+            <h2>Target raise: $2M - $5M seed round.</h2>
             <p>
-              Capital would be used to move from impressive prototype to commercial product: paid accounts, better data,
-              retention loops, customer acquisition, and B2B sales preparation.
+              Capital would fund 18-24 months of product development, premium data infrastructure, AI research systems,
+              go-to-market execution, compliance readiness, security hardening, and B2B sales preparation.
             </p>
           </article>
         </section>
