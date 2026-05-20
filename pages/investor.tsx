@@ -10,18 +10,22 @@ const thesisMetrics = [
 const heroFeatures = [
   {
     title: "AI Analyst",
+    icon: "AI",
     text: "Analyst-style reasoning explains why a stock is attractive, what is risky, and what to monitor next.",
   },
   {
     title: "Quant Models",
+    icon: "Q",
     text: "Momentum, trend, volatility, volume, support, resistance, and risk/reward are evaluated together.",
   },
   {
     title: "Risk Management",
+    icon: "R",
     text: "Model trade plans define entry zones, invalidation levels, upside targets, and portfolio posture.",
   },
   {
     title: "Actionable Signals",
+    icon: "S",
     text: "NASDAQ opportunities are ranked into clear watch, wait, and allocation-ready research outputs.",
   },
 ];
@@ -116,6 +120,64 @@ const currentStage = [
   "Investment goal: fund 18-24 months of product, data, AI infrastructure, growth, and operating runway to validate paid retention and B2B demand.",
 ];
 
+const whyNow = [
+  {
+    title: "Investors are overloaded",
+    text: "Retail and professional users have more charts, news, social signals, and data feeds than they can synthesize consistently.",
+  },
+  {
+    title: "Institutional systems are inaccessible",
+    text: "Bloomberg-style terminals and portfolio systems are powerful, but expensive and built for large organizations.",
+  },
+  {
+    title: "AI is changing research workflows",
+    text: "The opportunity is not generic chat. It is AI reasoning connected to quantitative models, risk controls, and repeatable decision output.",
+  },
+  {
+    title: "Decision support is moving upmarket",
+    text: "Investors increasingly expect software to explain why an opportunity matters, what can go wrong, and what should be monitored next.",
+  },
+];
+
+const competitivePositioning = [
+  {
+    platform: "Bloomberg-style terminal",
+    reasoning: "Partial",
+    tradePlans: "Limited",
+    portfolioRisk: "Yes",
+    interface: "Institutional",
+  },
+  {
+    platform: "Charting platforms",
+    reasoning: "Limited",
+    tradePlans: "Partial",
+    portfolioRisk: "Limited",
+    interface: "Medium",
+  },
+  {
+    platform: "Research publishers",
+    reasoning: "Partial",
+    tradePlans: "No",
+    portfolioRisk: "Limited",
+    interface: "Content-led",
+  },
+  {
+    platform: "QuantumStock",
+    reasoning: "Yes",
+    tradePlans: "Yes",
+    portfolioRisk: "In product roadmap",
+    interface: "Institutional-grade",
+    highlighted: true,
+  },
+];
+
+const tractionSignals = [
+  { metric: "Live MVP", label: "Frontend + backend deployed" },
+  { metric: "NASDAQ-100", label: "Initial opportunity universe" },
+  { metric: "AI memos", label: "Analyst reasoning workflow live" },
+  { metric: "Risk engine", label: "Entry, stop, targets, posture" },
+];
+
 const marketOpportunity = [
   {
     title: "Fragmented research workflow",
@@ -133,24 +195,29 @@ const marketOpportunity = [
 
 const roadmap = [
   {
-    phase: "Now",
-    title: "MVP terminal",
+    phase: "Phase 1",
+    title: "AI stock analysis MVP",
     text: "Live stock analysis, NASDAQ-100 opportunity scan, market regime engine, portfolio risk posture, and analyst reasoning.",
   },
   {
-    phase: "Next",
-    title: "Retention layer",
-    text: "User accounts, saved watchlists, alerts, exportable reports, improved data providers, and deeper company intelligence.",
+    phase: "Phase 2",
+    title: "Portfolio risk engine",
+    text: "Saved portfolios, exposure tracking, correlation, drawdown monitoring, alerts, and exportable research reports.",
   },
   {
-    phase: "Scale",
-    title: "Portfolio intelligence",
-    text: "Correlation, sector exposure, drawdown monitoring, allocation simulation, and weekly investment committee reports.",
+    phase: "Phase 3",
+    title: "Institutional terminal",
+    text: "Professional workflows, watchlist intelligence, report automation, premium data integrations, and team seats.",
   },
   {
-    phase: "Platform",
-    title: "Licensing engine",
-    text: "AI copilot, advisor workflows, API access, embedded research widgets, and white-label dashboards for partners.",
+    phase: "Phase 4",
+    title: "AI investment copilot",
+    text: "Natural-language research assistant connected to scoring models, trade plans, company context, and risk controls.",
+  },
+  {
+    phase: "Phase 5",
+    title: "Multi-asset intelligence platform",
+    text: "Expansion beyond equities into ETFs, options context, crypto, commodities, macro signals, APIs, and white-label distribution.",
   },
 ];
 
@@ -159,6 +226,12 @@ const investorSummary = [
   "Revenue expansion: subscription first, professional seats second, B2B/API licensing third.",
   "Product defensibility: workflow data, scoring logic, research templates, and explainable AI output compound over time.",
   "Strategic vision: become the intelligence layer between market data and investment decision workflows.",
+];
+
+const founderStory = [
+  "Built from an operator's perspective, not only a software demo.",
+  "Commodity, international trade, operational finance, and market experience shape the product's focus on risk, timing, and decision quality.",
+  "The founder insight: investors do not need more disconnected screens; they need a system that explains opportunity, risk, and next action.",
 ];
 
 export default function InvestorPage() {
@@ -196,7 +269,7 @@ export default function InvestorPage() {
               <div className="heroFeatureList">
                 {heroFeatures.map((item) => (
                   <article key={item.title}>
-                    <i aria-hidden="true" />
+                    <i aria-hidden="true">{item.icon}</i>
                     <div>
                       <strong>{item.title}</strong>
                       <p>{item.text}</p>
@@ -212,7 +285,7 @@ export default function InvestorPage() {
 
             <aside className="terminalPreview" aria-label="QuantumStock terminal preview">
               <div className="previewTopbar">
-                <b>QuantumStock OS</b>
+                <b><span /> QuantumStock OS</b>
                 <span>Dashboard</span>
                 <span>Markets</span>
                 <span>Portfolio</span>
@@ -227,6 +300,7 @@ export default function InvestorPage() {
                 <section className="previewOpportunity">
                   <small>Top Opportunity</small>
                   <strong>NVDA</strong>
+                  <small>NVIDIA Corporation</small>
                   <span>$912.48</span>
                   <em>BUY</em>
                   <div>
@@ -237,6 +311,12 @@ export default function InvestorPage() {
                 </section>
                 <section className="previewChart">
                   <small>Price Chart</small>
+                  <div className="previewTabs">
+                    <b>1D</b>
+                    <b>1W</b>
+                    <b>1M</b>
+                    <b>3M</b>
+                  </div>
                   <svg viewBox="0 0 320 150" aria-hidden="true">
                     <path d="M0 120 H320 M0 88 H320 M0 56 H320 M0 24 H320" />
                     <polyline points="4,118 30,96 58,100 86,72 112,84 140,54 168,62 196,38 224,44 252,20 280,32 316,16" />
@@ -319,6 +399,54 @@ export default function InvestorPage() {
           </article>
         </section>
 
+        <section className="investorSection convictionSection">
+          <div className="sectionHead">
+            <p className="eyebrow">Why Now</p>
+            <h2>AI-assisted investment intelligence is moving from novelty into workflow infrastructure.</h2>
+            <p>
+              The timing is attractive because investor behavior, market complexity, and AI capability are converging.
+              QuantumStock is positioned around explainable research output, not generic AI language.
+            </p>
+          </div>
+          <div className="whyNowGrid">
+            {whyNow.map((item) => (
+              <article key={item.title}>
+                <strong>{item.title}</strong>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="investorSection">
+          <div className="sectionHead">
+            <p className="eyebrow">Competitive Positioning</p>
+            <h2>QuantumStock combines AI reasoning, trade planning, and institutional-style workflow design.</h2>
+            <p>
+              This positioning snapshot shows the product direction against common research categories. The goal is to
+              make opportunity discovery, risk discipline, and analyst-style explanation available in one system.
+            </p>
+          </div>
+          <div className="competitiveTable" aria-label="Competitive positioning table">
+            <div className="competitiveRow competitiveHead">
+              <span>Platform</span>
+              <span>AI Reasoning</span>
+              <span>Trade Plans</span>
+              <span>Portfolio Risk</span>
+              <span>Institutional UI</span>
+            </div>
+            {competitivePositioning.map((item) => (
+              <div className={item.highlighted ? "competitiveRow highlighted" : "competitiveRow"} key={item.platform}>
+                <strong>{item.platform}</strong>
+                <span>{item.reasoning}</span>
+                <span>{item.tradePlans}</span>
+                <span>{item.portfolioRisk}</span>
+                <span>{item.interface}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <section className="investorSection" id="revenue">
           <div className="sectionHead">
             <p className="eyebrow">Revenue Model</p>
@@ -334,6 +462,25 @@ export default function InvestorPage() {
                 <span>{item.price}</span>
                 <h3>{item.title}</h3>
                 <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="investorSection">
+          <div className="sectionHead">
+            <p className="eyebrow">Early Signals</p>
+            <h2>The MVP already demonstrates the core research loop investors need to trust.</h2>
+            <p>
+              Before scaling paid acquisition, the important signal is whether the product can generate structured,
+              repeatable investment research from live market inputs.
+            </p>
+          </div>
+          <div className="tractionGrid">
+            {tractionSignals.map((item) => (
+              <article key={item.metric}>
+                <strong>{item.metric}</strong>
+                <span>{item.label}</span>
               </article>
             ))}
           </div>
@@ -470,7 +617,7 @@ export default function InvestorPage() {
         <section className="investorSection">
           <div className="sectionHead">
             <p className="eyebrow">Roadmap</p>
-            <h2>From MVP terminal to licensed investment intelligence platform.</h2>
+            <h2>From AI stock analysis MVP to multi-asset investment intelligence platform.</h2>
           </div>
           <div className="roadmapGrid">
             {roadmap.map((item) => (
@@ -481,6 +628,30 @@ export default function InvestorPage() {
               </article>
             ))}
           </div>
+        </section>
+
+        <section className="investorGrid">
+          <article className="investorPanel large">
+            <p className="eyebrow">Founder Story</p>
+            <h2>Built by an operator with real exposure to markets, trade, and financial decision pressure.</h2>
+            <div className="summaryGrid stageGrid">
+              {founderStory.map((item) => (
+                <div key={item}>
+                  <span />
+                  <p>{item}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="investorPanel">
+            <p className="eyebrow">Positioning</p>
+            <h2>Institutional-grade investment intelligence powered by AI reasoning.</h2>
+            <p>
+              QuantumStock is not trying to replace human judgment. It helps investors see better setups, understand
+              risk faster, and turn scattered market inputs into disciplined research output.
+            </p>
+          </article>
         </section>
 
         <section className="investorSection" id="summary">

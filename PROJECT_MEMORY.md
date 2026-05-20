@@ -69,6 +69,7 @@ The main terminal should remain clean and operational. Avoid overloading it with
 - Added a five-year illustrative growth model with year-by-year paid subscribers, estimated ARR, growth rate, and operating focus.
 - Added current project stage, target investment need, and use-of-funds allocation.
 - Current investor page target raise is positioned as `$2M - $5M seed round` for 18-24 months of runway.
+- Added investor conviction layer: expanded Why Now, competitive positioning, early MVP signals, five-phase roadmap, founder story, and sharper positioning language.
 - Main terminal at `/` should remain untouched when improving investor/business content.
 
 ## Next Planned Page

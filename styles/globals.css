@@ -1263,8 +1263,8 @@ h2 {
 
 .investorShell {
   margin: 0 auto;
-  max-width: 1440px;
-  padding: 14px;
+  max-width: 1540px;
+  padding: 16px;
 }
 
 .investorHero,
@@ -1274,6 +1274,8 @@ h2 {
 .packageCard,
 .roadmapGrid article,
 .fundingUseGrid article,
+.whyNowGrid article,
+.tractionGrid article,
 .summaryBand {
   border: 1px solid var(--line);
   background:
@@ -1284,19 +1286,22 @@ h2 {
 }
 
 .investorHero {
-  min-height: 760px;
-  padding: 18px;
+  min-height: 820px;
+  padding: 28px;
   display: grid;
   align-content: space-between;
-  gap: 34px;
+  gap: 24px;
   overflow: hidden;
   position: relative;
 }
 
 .investorHero::before {
   background:
-    linear-gradient(115deg, rgba(34, 197, 94, 0.18), transparent 36%),
-    radial-gradient(circle at 78% 22%, rgba(20, 184, 166, 0.2), transparent 28rem);
+    linear-gradient(115deg, rgba(34, 197, 94, 0.14), transparent 34%),
+    radial-gradient(circle at 75% 24%, rgba(20, 184, 166, 0.18), transparent 30rem),
+    linear-gradient(90deg, rgba(34, 197, 94, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(34, 197, 94, 0.025) 1px, transparent 1px);
+  background-size: auto, auto, 38px 38px, 38px 38px;
   content: "";
   inset: 0;
   pointer-events: none;
@@ -1349,18 +1354,18 @@ h2 {
 .investorHeroGrid {
   align-items: center;
   display: grid;
-  gap: 24px;
+  gap: 36px;
   grid-template-columns: minmax(0, 1fr);
 }
 
 .investorHeroCopy {
-  max-width: 520px;
+  max-width: 560px;
 }
 
 .investorHero h1 {
-  max-width: 520px;
-  font-size: clamp(42px, 6vw, 68px);
-  line-height: 1.04;
+  max-width: 560px;
+  font-size: clamp(46px, 5.3vw, 78px);
+  line-height: 1.02;
   margin-top: 10px;
   text-transform: uppercase;
 }
@@ -1379,6 +1384,7 @@ h2 {
 .summaryGrid p,
 .projectionRow p,
 .fundingUseGrid p,
+.whyNowGrid p,
 .investorBrief p {
   color: #cbd5e1;
   font-size: 14px;
@@ -1386,7 +1392,7 @@ h2 {
 }
 
 .investorHero p:not(.kicker) {
-  max-width: 780px;
+  max-width: 520px;
   margin: 18px 0 0;
 }
 
@@ -1415,7 +1421,7 @@ h2 {
 
 .heroFeatureList {
   display: grid;
-  gap: 14px;
+  gap: 18px;
   margin-top: 26px;
 }
 
@@ -1429,22 +1435,30 @@ h2 {
 .heroFeatureList i {
   border: 1px solid rgba(34, 197, 94, 0.34);
   background:
-    radial-gradient(circle, rgba(34, 197, 94, 0.42), transparent 34%),
+    radial-gradient(circle, rgba(34, 197, 94, 0.26), transparent 50%),
     rgba(14, 165, 233, 0.1);
+  color: #86efac;
   display: block;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 900;
   height: 52px;
+  line-height: 52px;
   position: relative;
+  text-align: center;
   width: 52px;
 }
 
 .heroFeatureList i::after {
-  background: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: transparent;
   content: "";
-  height: 18px;
-  left: 24px;
+  height: 32px;
+  left: 9px;
   position: absolute;
-  top: 16px;
-  width: 4px;
+  top: 9px;
+  width: 32px;
 }
 
 .heroFeatureList strong {
@@ -1463,9 +1477,10 @@ h2 {
   border: 1px solid rgba(34, 197, 94, 0.38);
   background: linear-gradient(180deg, rgba(3, 10, 18, 0.96), rgba(2, 6, 23, 0.98));
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
-  min-height: 620px;
+  min-height: 560px;
   padding: 14px;
-  transform: perspective(1500px) rotateY(-7deg) rotateZ(2deg);
+  transform: perspective(1700px) rotateY(-5deg) rotateZ(1.5deg);
+  transform-origin: center;
 }
 
 .previewTopbar,
@@ -1482,8 +1497,18 @@ h2 {
 }
 
 .previewTopbar b {
+  align-items: center;
   color: #f8fafc;
+  display: flex;
+  gap: 7px;
   font-size: 12px;
+}
+
+.previewTopbar b span {
+  border: 2px solid #22c55e;
+  display: inline-block;
+  height: 14px;
+  width: 14px;
 }
 
 .previewTopbar span,
@@ -1530,15 +1555,15 @@ h2 {
 .previewOpportunity strong {
   color: #f8fafc;
   display: block;
-  font-size: 28px;
-  margin-top: 18px;
+  font-size: 26px;
+  margin-top: 15px;
 }
 
 .previewOpportunity > span {
   color: #f8fafc;
   display: block;
   font-family: Menlo, Consolas, monospace;
-  font-size: 32px;
+  font-size: 30px;
   margin-top: 10px;
 }
 
@@ -1568,14 +1593,27 @@ h2 {
 
 .previewChart {
   grid-column: span 1;
-  min-height: 260px;
+  min-height: 238px;
 }
 
 .previewChart svg {
   display: block;
-  height: 205px;
+  height: 172px;
   margin-top: 14px;
   width: 100%;
+}
+
+.previewTabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.previewTabs b {
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  color: #94a3b8;
+  font-size: 9px;
+  padding: 4px 6px;
 }
 
 .previewChart path {
@@ -1595,7 +1633,7 @@ h2 {
 
 .previewAnalyst,
 .previewTradePlan {
-  min-height: 178px;
+  min-height: 162px;
 }
 
 .previewAnalyst p,
@@ -1671,6 +1709,8 @@ h2 {
 .packageGrid,
 .roadmapGrid,
 .fundingUseGrid,
+.whyNowGrid,
+.tractionGrid,
 .summaryGrid {
   display: grid;
   gap: 10px;
@@ -1776,6 +1816,103 @@ h2 {
   line-height: 1.6;
   margin: 0;
   padding-left: 18px;
+}
+
+.convictionSection {
+  border-color: rgba(56, 189, 248, 0.22);
+}
+
+.whyNowGrid {
+  margin-top: 16px;
+}
+
+.whyNowGrid article {
+  border-color: rgba(56, 189, 248, 0.16);
+  padding: 16px;
+}
+
+.whyNowGrid strong {
+  color: #f8fafc;
+  display: block;
+  font-size: 18px;
+}
+
+.whyNowGrid p {
+  margin: 10px 0 0;
+}
+
+.competitiveTable {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.competitiveRow {
+  align-items: center;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 210px repeat(4, 150px);
+  min-width: 820px;
+  padding: 13px 14px;
+}
+
+.competitiveRow:first-child {
+  border-top: 0;
+}
+
+.competitiveHead {
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.competitiveRow.highlighted {
+  background:
+    linear-gradient(90deg, rgba(34, 197, 94, 0.16), transparent),
+    rgba(2, 6, 23, 0.4);
+}
+
+.competitiveHead span,
+.competitiveRow span {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.competitiveHead span {
+  color: #67e8f9;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.competitiveRow strong {
+  color: #f8fafc;
+  font-size: 13px;
+}
+
+.tractionGrid {
+  margin-top: 16px;
+}
+
+.tractionGrid article {
+  border-color: rgba(34, 197, 94, 0.18);
+  padding: 16px;
+}
+
+.tractionGrid strong {
+  color: #86efac;
+  display: block;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 24px;
+  line-height: 1.05;
+}
+
+.tractionGrid span {
+  color: #cbd5e1;
+  display: block;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 10px;
 }
 
 .projectionSection {
@@ -1921,7 +2058,7 @@ h2 {
 
 @media (min-width: 820px) {
   .investorHeroGrid {
-    grid-template-columns: minmax(380px, 0.58fr) minmax(620px, 1fr);
+    grid-template-columns: minmax(440px, 0.46fr) minmax(690px, 0.86fr);
   }
 
   .investorGrid {
@@ -1941,10 +2078,15 @@ h2 {
   }
 
   .roadmapGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .fundingUseGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .whyNowGrid,
+  .tractionGrid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
