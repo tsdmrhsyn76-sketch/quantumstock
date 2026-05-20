@@ -37,57 +37,67 @@ const terminalSignals = [
   { ticker: "AVGO", signal: "BUY", score: "81", upside: "+8.1%" },
 ];
 
-const revenueStreams = [
+const subscriptionTiers = [
   {
-    title: "Retail Pro",
-    price: "$29 - $99 / month",
-    text: "Advanced opportunity scans, AI analyst memos, watchlists, market regime context, and model trade plans for self-directed investors.",
+    plan: "Free",
+    price: "$0",
+    audience: "Top-of-funnel users",
+    features: "Limited ticker analysis, delayed opportunity snapshot, basic market regime view",
   },
   {
-    title: "Professional Seat",
-    price: "$199 - $499 / month",
-    text: "Higher scan limits, saved portfolios, alerts, exportable research, risk dashboards, and institutional-grade workflow controls.",
+    plan: "Pro",
+    price: "$49/mo",
+    audience: "Active retail investors",
+    features: "AI stock analysis, opportunity signals, model trade plans, watchlists, analyst reasoning",
   },
   {
-    title: "Team / Advisor License",
-    price: "$1,500+ / month",
-    text: "Multi-seat dashboards for advisory teams, family offices, boutique funds, research publishers, and financial education businesses.",
+    plan: "Elite",
+    price: "$199/mo",
+    audience: "Serious investors and operators",
+    features: "Portfolio analytics, advanced quant scoring, alerts, exports, risk dashboard, AI portfolio assistant",
   },
   {
-    title: "API / White Label",
-    price: "Usage based",
-    text: "Opportunity scoring, market regime intelligence, trade-plan levels, and explainable AI research embedded into partner platforms.",
+    plan: "Institutional",
+    price: "Custom",
+    audience: "Teams and financial firms",
+    features: "Multi-user workspaces, API access, custom screeners, risk engine, data layer, white-label options",
   },
 ];
 
-const packages = [
+const revenuePillars = [
   {
-    name: "Starter",
-    audience: "Active retail investors",
-    price: "$29",
-    features: ["Core ticker analysis", "Popular tech watchlist", "Market regime snapshot"],
+    title: "SaaS subscriptions",
+    text: "Recurring individual and professional subscriptions for AI analysis, signals, portfolio analytics, and premium research workflows.",
   },
   {
-    name: "Pro",
-    audience: "Serious operators",
-    price: "$99",
-    features: ["NASDAQ opportunity scanner", "AI analyst memo", "Model trade plan", "Risk/reward ranking"],
-    featured: true,
+    title: "Institutional licensing",
+    text: "Team licensing for hedge funds, family offices, prop trading firms, research desks, advisors, and commodity trading firms.",
   },
   {
-    name: "Desk",
-    audience: "Professionals and teams",
-    price: "$499+",
-    features: ["Saved portfolios", "Report export", "Alerts", "Team workflows"],
+    title: "Quant analysis API",
+    text: "AI-driven quantitative analysis API for scoring, market regime intelligence, trade planning, risk context, and explainable outputs.",
   },
+  {
+    title: "Data & intelligence layer",
+    text: "Custom screeners, institutional signals, portfolio stress testing, quant scoring engine, and enterprise analytics packages.",
+  },
+];
+
+const flywheelSteps = [
+  "Retail users",
+  "AI usage",
+  "Better models",
+  "Institutional insights",
+  "Premium subscriptions",
+  "Enterprise clients",
 ];
 
 const growthProjection = [
-  { year: "Year 1", subscribers: "1,000", arr: "$0.7M", growth: "Launch year", focus: "Paid MVP, conversion, retention" },
-  { year: "Year 2", subscribers: "5,000", arr: "$3.8M", growth: "5.0x", focus: "Pro subscriptions, alerts, saved portfolios" },
-  { year: "Year 3", subscribers: "18,000", arr: "$15M", growth: "3.9x", focus: "Advisor seats, reports, team workflows" },
-  { year: "Year 4", subscribers: "45,000", arr: "$44M", growth: "2.9x", focus: "B2B licenses, API pilots, enterprise sales" },
-  { year: "Year 5", subscribers: "100,000", arr: "$110M", growth: "2.5x", focus: "Platform scale, white-label distribution" },
+  { year: "Year 1", subscribers: "500", arr: "$0.3M", growth: "Launch year", focus: "Paid MVP, conversion, retention" },
+  { year: "Year 2", subscribers: "2,500", arr: "$1.8M", growth: "5.0x", focus: "Pro subscriptions, alerts, saved portfolios" },
+  { year: "Year 3", subscribers: "8,000", arr: "$7M", growth: "3.9x", focus: "Elite tier, reports, team workflows" },
+  { year: "Year 4", subscribers: "20,000", arr: "$20M", growth: "2.9x", focus: "Institutional pilots, API access, advisor sales" },
+  { year: "Year 5", subscribers: "50,000", arr: "$55M", growth: "2.5x", focus: "Enterprise licensing, white-label distribution" },
 ];
 
 const fundingUse = [
@@ -450,19 +460,67 @@ export default function InvestorPage() {
         <section className="investorSection" id="revenue">
           <div className="sectionHead">
             <p className="eyebrow">Revenue Model</p>
-            <h2>Four monetization paths with a natural expansion ladder.</h2>
+            <h2>A financial intelligence business built on subscriptions, institutional licensing, API access, and risk infrastructure.</h2>
             <p>
-              QuantumStock can start with individual subscriptions, then move upmarket into professional seats, team
-              licensing, and embedded intelligence products.
+              QuantumStock is not positioned as a trading app. The revenue architecture is designed around AI-powered
+              investment intelligence infrastructure: individual access, professional tools, enterprise workflows, and
+              a reusable quantitative intelligence layer.
             </p>
           </div>
-          <div className="revenueGrid">
-            {revenueStreams.map((item) => (
-              <article key={item.title}>
+
+          <div className="tierTable" aria-label="Tiered subscription model">
+            <div className="tierRow tierHead">
+              <span>Plan</span>
+              <span>Monthly Price</span>
+              <span>Primary Buyer</span>
+              <span>Core Access</span>
+            </div>
+            {subscriptionTiers.map((item) => (
+              <div className={item.plan === "Institutional" ? "tierRow highlighted" : "tierRow"} key={item.plan}>
+                <strong>{item.plan}</strong>
                 <span>{item.price}</span>
-                <h3>{item.title}</h3>
+                <span>{item.audience}</span>
+                <p>{item.features}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="investorSection">
+          <div className="sectionHead">
+            <p className="eyebrow">Institutional Revenue</p>
+            <h2>The larger opportunity is licensing the research, risk, and intelligence layer to professional users.</h2>
+            <p>
+              Retail subscriptions prove demand and usage. Institutional revenue expands the contract value through
+              multi-seat workspaces, portfolio risk tools, custom analytics, API access, and embedded intelligence.
+            </p>
+          </div>
+          <div className="revenuePillarGrid">
+            {revenuePillars.map((item) => (
+              <article key={item.title}>
+                <strong>{item.title}</strong>
                 <p>{item.text}</p>
               </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="investorSection flywheelSection">
+          <div className="sectionHead">
+            <p className="eyebrow">Revenue Flywheel</p>
+            <h2>Usage compounds into better intelligence, higher-value subscriptions, and enterprise demand.</h2>
+            <p>
+              The long-term model is not only charging for software access. The platform can improve as usage creates
+              clearer product signals, better workflow templates, stronger scoring logic, and more valuable enterprise
+              analytics.
+            </p>
+          </div>
+          <div className="flywheelGrid">
+            {flywheelSteps.map((item, index) => (
+              <div key={item}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <strong>{item}</strong>
+              </div>
             ))}
           </div>
         </section>
@@ -481,29 +539,6 @@ export default function InvestorPage() {
               <article key={item.metric}>
                 <strong>{item.metric}</strong>
                 <span>{item.label}</span>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="investorSection">
-          <div className="sectionHead">
-            <p className="eyebrow">Subscription Packages</p>
-            <h2>Pricing architecture designed for retail entry and professional expansion.</h2>
-          </div>
-          <div className="packageGrid">
-            {packages.map((item) => (
-              <article className={item.featured ? "packageCard featured" : "packageCard"} key={item.name}>
-                <div>
-                  <span>{item.audience}</span>
-                  <h3>{item.name}</h3>
-                </div>
-                <strong>{item.price}</strong>
-                <ul>
-                  {item.features.map((feature) => (
-                    <li key={feature}>{feature}</li>
-                  ))}
-                </ul>
               </article>
             ))}
           </div>

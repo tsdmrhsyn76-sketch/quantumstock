@@ -70,6 +70,7 @@ The main terminal should remain clean and operational. Avoid overloading it with
 - Added current project stage, target investment need, and use-of-funds allocation.
 - Current investor page target raise is positioned as `$2M - $5M seed round` for 18-24 months of runway.
 - Added investor conviction layer: expanded Why Now, competitive positioning, early MVP signals, five-phase roadmap, founder story, and sharper positioning language.
+- Revenue section was reframed around institutional investor logic: tiered subscription table, institutional licensing, quant analysis API, data/intelligence layer, and revenue flywheel. Five-year model was made more conservative to avoid over-hype.
 - Main terminal at `/` should remain untouched when improving investor/business content.
 
 ## Next Planned Page
