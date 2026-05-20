@@ -176,6 +176,16 @@ const fallbackWatchlist: WatchlistRow[] = [
   { ticker: "GOOGL", price: 176.88, change: 0.64, aiScore: 68, momentum: 61, risk: "LOW", signal: "WATCH" },
   { ticker: "AMD", price: 158.22, change: -1.28, aiScore: 54, momentum: 52, risk: "HIGH", signal: "NEUTRAL" },
   { ticker: "TSLA", price: 178.03, change: -2.46, aiScore: 43, momentum: 39, risk: "HIGH", signal: "AVOID" },
+  { ticker: "AVGO", price: 178.4, change: 0.88, aiScore: 76, momentum: 72, risk: "MED", signal: "WATCH" },
+  { ticker: "ORCL", price: 136.8, change: 0.31, aiScore: 66, momentum: 58, risk: "MED", signal: "WATCH" },
+  { ticker: "CRM", price: 286.2, change: -0.44, aiScore: 61, momentum: 55, risk: "MED", signal: "NEUTRAL" },
+  { ticker: "NFLX", price: 622.4, change: 1.22, aiScore: 70, momentum: 67, risk: "MED", signal: "WATCH" },
+  { ticker: "ADBE", price: 531.6, change: -0.21, aiScore: 63, momentum: 54, risk: "LOW", signal: "NEUTRAL" },
+  { ticker: "QCOM", price: 205.7, change: 0.74, aiScore: 69, momentum: 64, risk: "MED", signal: "WATCH" },
+  { ticker: "AMAT", price: 214.5, change: 0.96, aiScore: 72, momentum: 70, risk: "MED", signal: "WATCH" },
+  { ticker: "PANW", price: 326.9, change: 0.52, aiScore: 67, momentum: 62, risk: "MED", signal: "WATCH" },
+  { ticker: "CRWD", price: 352.1, change: 1.48, aiScore: 73, momentum: 75, risk: "HIGH", signal: "WATCH" },
+  { ticker: "PLTR", price: 24.8, change: 2.35, aiScore: 65, momentum: 71, risk: "HIGH", signal: "WATCH" },
 ];
 
 const marketTape = [

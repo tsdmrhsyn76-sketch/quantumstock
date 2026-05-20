@@ -1538,9 +1538,9 @@ def research_memo(ticker: str = Query(..., min_length=1, max_length=12)) -> dict
 @app.get("/api/watchlist")
 def watchlist(
     tickers: str = Query(
-        "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA",
+        "NVDA,MSFT,AAPL,AMZN,META,GOOGL,AMD,TSLA,AVGO,ORCL,CRM,NFLX,ADBE,QCOM,AMAT,PANW,CRWD,PLTR",
         min_length=1,
-        max_length=160,
+        max_length=360,
     )
 ) -> dict[str, Any]:
     symbols = []
@@ -1552,7 +1552,7 @@ def watchlist(
     if not symbols:
         raise HTTPException(status_code=400, detail="At least one ticker is required.")
 
-    symbols = symbols[:12]
+    symbols = symbols[:24]
     results: list[dict[str, Any]] = []
     errors: list[dict[str, str]] = []
 

@@ -202,6 +202,17 @@ h2 {
 .watchTable {
   display: grid;
   gap: 4px;
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+
+.watchTable::-webkit-scrollbar {
+  width: 5px;
+}
+
+.watchTable::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
 }
 
 .watchIntelGrid {
