@@ -46,7 +46,6 @@ export default function FeaturePage({ pageKey }: FeaturePageProps) {
           <header className="featureTopbar">
             <a className="featureBack" href="/">Terminal</a>
             <div>
-              <a href="/investor">Investor</a>
               <a href="/settings">Settings</a>
             </div>
           </header>

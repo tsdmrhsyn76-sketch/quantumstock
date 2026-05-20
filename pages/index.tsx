@@ -864,7 +864,6 @@ export default function Home() {
               <button disabled={loading} type="submit">{loading ? "..." : "Run"}</button>
             </form>
             <div className="qsTopActions">
-              <a href="/investor">Investor</a>
               <span>☼</span>
               <span>◌</span>
               <b>Pro</b>
