@@ -1187,6 +1187,622 @@ h2 {
   margin: 12px 0 0;
 }
 
+.qsTerminal {
+  background: #02070d;
+  color: #f8fafc;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.qsSidebar {
+  border-right: 1px solid rgba(56, 189, 248, 0.16);
+  background: linear-gradient(180deg, rgba(1, 8, 14, 0.98), rgba(1, 5, 10, 0.98));
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 16px;
+  padding: 18px 14px;
+}
+
+.qsBrand {
+  align-items: center;
+  color: #f8fafc;
+  display: flex;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.qsBrand span {
+  border: 3px solid #22c55e;
+  color: #22c55e;
+  display: inline-grid;
+  font-size: 16px;
+  height: 28px;
+  place-items: center;
+  width: 28px;
+}
+
+.qsBrand strong {
+  color: #22c55e;
+  font-weight: 900;
+}
+
+.qsNav {
+  display: grid;
+  gap: 7px;
+  margin-top: 18px;
+}
+
+.qsNav button {
+  align-items: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 26px 1fr;
+  padding: 12px 10px;
+  text-align: left;
+}
+
+.qsNav button.active,
+.qsNav button:hover {
+  border-color: rgba(34, 197, 94, 0.18);
+  background: rgba(14, 165, 233, 0.08);
+  color: #f8fafc;
+}
+
+.qsNav i {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: #22c55e;
+  display: inline-grid;
+  font-style: normal;
+  height: 24px;
+  place-items: center;
+  width: 24px;
+}
+
+.premiumCard,
+.userCard,
+.qsCard {
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  background: linear-gradient(180deg, rgba(8, 18, 28, 0.88), rgba(2, 8, 13, 0.92));
+}
+
+.premiumCard {
+  padding: 12px;
+}
+
+.premiumCard b {
+  color: #fde68a;
+  display: block;
+}
+
+.premiumCard p,
+.userCard span {
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.premiumCard button,
+.riskCard button,
+.askButton,
+.qsTopActions b {
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.22), rgba(20, 184, 166, 0.14));
+  color: #86efac;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.premiumCard button {
+  margin-top: 8px;
+  padding: 9px;
+  width: 100%;
+}
+
+.userCard {
+  padding: 12px;
+}
+
+.userCard strong {
+  color: #22c55e;
+  display: block;
+  margin-top: 4px;
+}
+
+.qsWorkspace {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+}
+
+.qsTopbar {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(280px, 430px) 1fr;
+}
+
+.qsSearch {
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  background: rgba(8, 18, 28, 0.82);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px;
+}
+
+.qsSearch input {
+  border: 0;
+  background: transparent;
+  color: #f8fafc;
+  outline: 0;
+  padding: 13px 16px;
+}
+
+.qsSearch button {
+  border: 0;
+  border-left: 1px solid rgba(56, 189, 248, 0.16);
+  background: rgba(148, 163, 184, 0.08);
+  color: #cbd5e1;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.qsTopActions {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: flex-end;
+}
+
+.qsTopActions span {
+  color: #f8fafc;
+  font-size: 22px;
+}
+
+.qsTopActions b {
+  padding: 9px 14px;
+}
+
+.qsMarketStrip {
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  background: rgba(8, 18, 28, 0.82);
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.qsMarketStrip div {
+  border-right: 1px solid rgba(56, 189, 248, 0.16);
+  padding: 12px 16px;
+}
+
+.qsMarketStrip span,
+.qsCardHead span,
+.qsCard h3,
+.signalRow.head span {
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.qsMarketStrip strong {
+  display: block;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 19px;
+  margin-top: 6px;
+}
+
+.qsMarketStrip em {
+  display: block;
+  font-size: 12px;
+  font-style: normal;
+  margin-top: 4px;
+}
+
+.qsPrimaryGrid,
+.qsSecondaryGrid,
+.qsBottomGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.qsPrimaryGrid {
+  grid-template-columns: 1.05fr 1.72fr 1.1fr;
+}
+
+.qsSecondaryGrid {
+  grid-template-columns: 1fr 1fr 1.15fr 1.25fr;
+}
+
+.qsBottomGrid {
+  grid-template-columns: minmax(0, 2.2fr) minmax(320px, 1fr);
+}
+
+.qsCard {
+  min-width: 0;
+  padding: 18px;
+}
+
+.qsCardHead {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.qsCardHead button,
+.qsCardHead a {
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.08);
+  color: #22c55e;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 8px 12px;
+  text-decoration: none;
+}
+
+.topOpportunityCard h2 {
+  font-size: 34px;
+}
+
+.topOpportunityCard p,
+.aiTerminalCard p,
+.terminalNewsList small {
+  color: #cbd5e1;
+  line-height: 1.55;
+}
+
+.priceLine {
+  align-items: end;
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.priceLine strong {
+  font-family: Menlo, Consolas, monospace;
+  font-size: 38px;
+}
+
+.priceLine span {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.topOpportunityCard > em {
+  display: block;
+  font-style: normal;
+  margin-top: 8px;
+}
+
+.topOpportunityCard > button {
+  float: right;
+  margin-top: -42px;
+  padding: 10px 18px;
+}
+
+.scoreMiniGrid {
+  border-top: 1px solid rgba(56, 189, 248, 0.14);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 34px;
+  padding-top: 16px;
+}
+
+.scoreMiniGrid span {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.scoreMiniGrid b {
+  color: #f8fafc;
+  display: block;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 19px;
+  margin-bottom: 4px;
+}
+
+.chartTabs {
+  display: flex;
+  gap: 6px;
+}
+
+.chartTabs b {
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  color: #94a3b8;
+  font-size: 11px;
+  padding: 6px 10px;
+}
+
+.terminalPriceSvg {
+  display: block;
+  height: 260px;
+  width: 100%;
+}
+
+.terminalPriceSvg path {
+  fill: none;
+  stroke: rgba(148, 163, 184, 0.12);
+}
+
+.terminalPriceSvg polyline {
+  fill: none;
+  stroke: #22c55e;
+  stroke-width: 2.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.terminalPriceSvg rect {
+  fill: rgba(20, 184, 166, 0.35);
+}
+
+.aiStats {
+  border-top: 1px solid rgba(56, 189, 248, 0.14);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 18px;
+  padding-top: 16px;
+}
+
+.aiStats span {
+  color: #94a3b8;
+}
+
+.aiStats b {
+  color: #22c55e;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.askButton {
+  margin-top: 18px;
+  padding: 12px;
+  width: 100%;
+}
+
+.tradeTerminalCard div,
+.riskCard div {
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.tradeTerminalCard span,
+.riskCard span {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.tradeTerminalCard strong,
+.riskCard strong {
+  color: #86efac;
+  font-family: Menlo, Consolas, monospace;
+}
+
+.sentimentDial {
+  background: conic-gradient(#22c55e 0 64%, rgba(56, 189, 248, 0.12) 64% 100%);
+  display: grid;
+  height: 140px;
+  margin: 16px auto;
+  place-items: center;
+  width: 140px;
+}
+
+.sentimentDial strong {
+  font-size: 40px;
+}
+
+.sentimentDial span {
+  color: #22c55e;
+  display: block;
+  font-size: 13px;
+  margin-top: 40px;
+}
+
+.sentimentStats {
+  display: flex;
+  justify-content: space-between;
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.donut {
+  background: conic-gradient(#3b82f6 0 24%, #14b8a6 24% 58%, #22c55e 58% 74%, #f97316 74% 88%, #64748b 88% 100%);
+  display: grid;
+  height: 140px;
+  margin: 14px auto;
+  place-items: center;
+  width: 140px;
+}
+
+.donut span {
+  background: #06101a;
+  display: grid;
+  height: 88px;
+  place-items: center;
+  text-align: center;
+  width: 88px;
+}
+
+.exposureCard ul {
+  color: #cbd5e1;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.exposureCard li {
+  display: flex;
+  justify-content: space-between;
+}
+
+.riskCard button {
+  margin-top: 14px;
+  padding: 10px;
+  width: 100%;
+}
+
+.signalTable {
+  display: grid;
+  gap: 0;
+}
+
+.signalRow {
+  align-items: center;
+  border: 0;
+  border-top: 1px solid rgba(56, 189, 248, 0.12);
+  background: transparent;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 90px 94px 88px 108px 88px 94px 76px 64px;
+  padding: 10px 0;
+  text-align: left;
+}
+
+.signalRow b,
+.signalRow span,
+.signalRow i {
+  font-family: Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.signalRow em {
+  display: inline-block;
+  font-style: normal;
+  font-weight: 900;
+  padding: 5px 8px;
+  text-align: center;
+}
+
+.signalRow i {
+  color: #22c55e;
+  font-style: normal;
+}
+
+.terminalNewsList {
+  display: grid;
+  gap: 10px;
+}
+
+.terminalNewsList a {
+  align-items: center;
+  border-top: 1px solid rgba(56, 189, 248, 0.12);
+  color: #f8fafc;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 42px 1fr;
+  padding-top: 10px;
+  text-decoration: none;
+}
+
+.terminalNewsList b {
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  color: #22c55e;
+  display: grid;
+  height: 34px;
+  place-items: center;
+}
+
+.terminalNewsList span {
+  display: block;
+  font-size: 13px;
+}
+
+.terminalNewsList small {
+  display: block;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.qsFooter {
+  align-items: center;
+  border-top: 1px solid rgba(56, 189, 248, 0.16);
+  color: #cbd5e1;
+  display: flex;
+  gap: 34px;
+  padding: 10px 0 0;
+}
+
+.qsFooter span {
+  font-size: 12px;
+}
+
+.qsFooter b {
+  color: #22c55e;
+}
+
+.qsFooter em {
+  margin-left: auto;
+  font-size: 11px;
+  font-style: normal;
+}
+
+@media (max-width: 1180px) {
+  .qsTerminal {
+    grid-template-columns: 1fr;
+  }
+
+  .qsSidebar {
+    position: static;
+  }
+
+  .qsNav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .qsPrimaryGrid,
+  .qsSecondaryGrid,
+  .qsBottomGrid,
+  .qsMarketStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .qsWorkspace {
+    padding: 10px;
+  }
+
+  .qsTopbar,
+  .qsPrimaryGrid,
+  .qsSecondaryGrid,
+  .qsBottomGrid,
+  .qsMarketStrip,
+  .qsNav {
+    grid-template-columns: 1fr;
+  }
+
+  .signalTable {
+    overflow-x: auto;
+  }
+
+  .signalRow {
+    min-width: 780px;
+  }
+
+  .qsFooter {
+    align-items: flex-start;
+    display: grid;
+    gap: 8px;
+  }
+
+  .qsFooter em {
+    margin-left: 0;
+  }
+}
+
 @media (min-width: 720px) {
   .topBar {
     grid-template-columns: 1fr 430px;

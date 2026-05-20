@@ -262,6 +262,35 @@ function MiniChart({ label, data, tone = "amber" }: { label: string; data: numbe
   );
 }
 
+function TerminalPriceChart({ data }: { data: number[] }) {
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const points = data
+    .map((value, index) => {
+      const x = 8 + (index / Math.max(data.length - 1, 1)) * 84;
+      const y = 78 - ((value - min) / range) * 56;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  return (
+    <svg className="terminalPriceSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M8 78 H94 M8 60 H94 M8 42 H94 M8 24 H94" />
+      <polyline points={points} />
+      {data.slice(-12).map((value, index) => (
+        <rect
+          height={12 + ((value - min) / range) * 20}
+          key={`${value}-${index}`}
+          width="2.8"
+          x={10 + index * 7}
+          y={82 - (12 + ((value - min) / range) * 20)}
+        />
+      ))}
+    </svg>
+  );
+}
+
 function signalClass(signal: string) {
   return signal.toLowerCase();
 }
@@ -731,642 +760,200 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <main className="terminalShell">
-        <header className="topBar">
-          <div>
-            <p className="kicker">QuantumStock OS</p>
-            <h1>AI Equity Opportunity Terminal</h1>
+      <main className="qsTerminal">
+        <aside className="qsSidebar">
+          <a className="qsBrand" href="/">
+            <span>Q</span>
+            Quantum<strong>Stock</strong>
+          </a>
+          <nav className="qsNav" aria-label="Terminal navigation">
+            {["Overview", "Market Pulse", "Stock Screener", "Quant Signals", "AI Analytics", "Portfolio Risk", "Backtesting", "Alerts", "News Feed", "Economic Calendar", "Settings"].map((item, index) => (
+              <button className={index === 0 ? "active" : ""} key={item} type="button">
+                <i aria-hidden="true">{item.slice(0, 1)}</i>
+                {item}
+              </button>
+            ))}
+          </nav>
+          <div className="premiumCard">
+            <b>Unlock Premium</b>
+            <p>Get advanced analytics, real-time signals, and portfolio insights.</p>
+            <button type="button">Upgrade Now</button>
           </div>
-          <form className="analysisForm" onSubmit={onSubmit}>
-            <input
-              aria-label="Ticker"
-              value={ticker}
-              onChange={(event) => setTicker(event.target.value.toUpperCase())}
-              placeholder="NVDA"
-            />
-            <button disabled={loading} type="submit">
-              {loading ? "Analyzing" : "Run Analysis"}
-            </button>
-          </form>
-        </header>
+          <div className="userCard">
+            <span>Quantum User</span>
+            <strong>Pro Plan</strong>
+          </div>
+        </aside>
 
-        <section className="marketTape">
-          {marketTape.map((item) => (
-            <div key={item.label}>
-              <span>{item.label}</span>
-              <b>{item.value}</b>
-              <em className={item.change.startsWith("-") ? "down" : "up"}>{item.change}</em>
+        <section className="qsWorkspace">
+          <header className="qsTopbar">
+            <form className="qsSearch" onSubmit={onSubmit}>
+              <input
+                aria-label="Search ticker"
+                onChange={(event) => setTicker(event.target.value.toUpperCase())}
+                placeholder="Search ticker, company..."
+                value={ticker}
+              />
+              <button disabled={loading} type="submit">{loading ? "..." : "Run"}</button>
+            </form>
+            <div className="qsTopActions">
+              <span>☼</span>
+              <span>◌</span>
+              <b>Pro</b>
             </div>
-          ))}
-        </section>
+          </header>
 
-        {error ? <div className="errorBox">{error}</div> : null}
+          <section className="qsMarketStrip">
+            {marketTape.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+                <em className={item.change.startsWith("-") ? "down" : "up"}>{item.change}</em>
+              </div>
+            ))}
+          </section>
 
-        <section className="terminalGrid">
-          <aside className="panel watchPanel">
-            <div className="panelHead">
-              <p className="eyebrow">Portfolio Watchlist</p>
-              <span>{watchlistLoading ? "Scanning live" : `${liveWatchlist.length} names`}</span>
-            </div>
-            {watchlistError ? <p className="watchError">{watchlistError}</p> : null}
-            <div className="watchIntelGrid">
-              {watchlistIntelligence.map((item) => (
-                <button key={item.label} onClick={() => selectTicker(item.value)} type="button">
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                  <small>{item.sub}</small>
-                </button>
+          {error ? <div className="errorBox">{error}</div> : null}
+
+          <section className="qsPrimaryGrid">
+            <article className="qsCard topOpportunityCard">
+              <div className="qsCardHead">
+                <span>Top Opportunity</span>
+                <button type="button">☆</button>
+              </div>
+              <h2>{selectedTicker}</h2>
+              <p>{companyProfile?.company_name ?? `${selectedTicker} research book`}</p>
+              <div className="priceLine">
+                <strong>{formatCurrency(result?.current_price ?? activeRow.price)}</strong>
+                <span>USD</span>
+              </div>
+              <em className={activeRow.change >= 0 ? "up" : "down"}>{activeRow.change >= 0 ? "+" : ""}{activeRow.change.toFixed(2)}%</em>
+              <button className={signalClass(signal)} type="button">{signal}</button>
+              <div className="scoreMiniGrid">
+                <span><b>{score}</b>AI Score</span>
+                <span><b>{result?.trend_score ?? 70}</b>Trend</span>
+                <span><b>{momentum}</b>Momentum</span>
+                <span><b>{riskLevel}</b>Risk</span>
+              </div>
+            </article>
+
+            <article className="qsCard chartTerminalCard">
+              <div className="qsCardHead">
+                <span>Price Chart</span>
+                <div className="chartTabs"><b>1D</b><b>1W</b><b>1M</b><b>3M</b><b>1Y</b></div>
+              </div>
+              <TerminalPriceChart data={chartData.price} />
+            </article>
+
+            <article className="qsCard aiTerminalCard">
+              <div className="qsCardHead">
+                <span>AI Analyst</span>
+                <button type="button" onClick={() => runAnalysis(selectedTicker)}>New Analysis</button>
+              </div>
+              <h3>Summary</h3>
+              <p>{researchMemo?.summary ?? assistantBullets[0]}</p>
+              <div className="aiStats">
+                <span><b>{researchMemo?.signal ?? signal}</b>Bias</span>
+                <span><b>{researchMemo?.confidence_score ?? score}%</b>Confidence</span>
+              </div>
+              <button className="askButton" type="button">Ask AI Assistant</button>
+            </article>
+          </section>
+
+          <section className="qsSecondaryGrid">
+            <article className="qsCard tradeTerminalCard">
+              <h3>Trade Plan</h3>
+              {[
+                ["Entry Zone", entryZoneText],
+                ["Stop Loss", tradePlanSource ? formatCurrency(tradePlanSource.stopLoss) : pendingTradePlanText],
+                ["Target 1", tradePlanSource ? formatCurrency(tradePlanSource.target1) : pendingTradePlanText],
+                ["Target 2", tradePlanSource ? formatCurrency(tradePlanSource.target2) : pendingTradePlanText],
+                ["Expected Upside", tradePlanSource ? `${tradePlanSource.upside}%` : pendingTradePlanText],
+                ["Risk / Reward", tradePlanSource ? `${tradePlanSource.riskReward}x` : pendingTradePlanText],
+              ].map(([label, value]) => (
+                <div key={label}><span>{label}</span><strong>{value}</strong></div>
               ))}
-            </div>
-            <div className="watchTable">
-              <div className="watchRow head">
-                <span>Ticker</span>
-                <span>Price</span>
-                <span>Chg</span>
-                <span>AI</span>
-                <span>Signal</span>
-              </div>
-              {liveWatchlist.map((row) => (
-                <button
-                  className={`watchRow ${row.ticker === selectedTicker ? "active" : ""}`}
-                  key={row.ticker}
-                  onClick={() => selectTicker(row.ticker)}
-                  type="button"
-                >
-                  <b>{row.ticker}</b>
-                  <span>{formatCurrency(row.price)}</span>
-                  <span className={row.change >= 0 ? "up" : "down"}>{row.change.toFixed(2)}%</span>
-                  <span>{row.aiScore}</span>
-                  <em className={signalClass(row.signal)}>{row.signal}</em>
-                </button>
-              ))}
-            </div>
-          </aside>
+            </article>
 
-          <section className="mainStack">
-            <div className="panel scorePanel">
-              <div className="panelHead">
-                <p className="eyebrow">Opportunity Engine</p>
-                <span>{loading ? "Live query running" : "Research mode"}</span>
-              </div>
-              <div className="scoreDeck">
-                <div className="scoreReadout">
-                  <strong>{score}</strong>
-                  <div>
-                    <h2>
-                      {selectedTicker} <span className={signalClass(signal)}>{signal}</span>
-                    </h2>
-                    <p>
-                      {result?.explanation ??
-                        "Mock watchlist values are displayed until a live backend analysis is executed."}
-                    </p>
-                  </div>
-                </div>
-                <div className="factorGrid">
-                  <ScoreBar label="Trend" value={result?.trend_score ?? 70} />
-                  <ScoreBar label="Momentum" value={momentum} />
-                  <ScoreBar label="Volatility" value={result?.volatility_score ?? 64} />
-                  <ScoreBar label="Volume" value={result?.volume_score ?? 68} />
-                </div>
-              </div>
-            </div>
+            <article className="qsCard sentimentCard">
+              <h3>Market Sentiment</h3>
+              <div className="sentimentDial"><strong>{marketRegime?.spy_score ?? 64}</strong><span>{marketRegime?.risk_state ?? "Bullish"}</span></div>
+              <div className="sentimentStats"><span>Bullish 64%</span><span>Neutral 24%</span><span>Bearish 12%</span></div>
+            </article>
 
-            <div className="metricGrid">
-              <MetricTile label="Last Price" value={formatCurrency(result?.current_price ?? activeRow.price)} sub="Realtime proxy" />
-              <MetricTile label="Expected Upside" value={result ? `${result.expected_upside_percent}%` : "8.4%"} sub="Target model" />
-              <MetricTile label="Risk/Reward" value={result?.risk_reward_ratio ?? "2.1"} sub="Plan quality" />
-              <MetricTile label="Risk Level" value={riskLevel} sub="Volatility adjusted" />
-            </div>
+            <article className="qsCard exposureCard">
+              <h3>Portfolio Exposure</h3>
+              <div className="donut"><span>Total Value<br /><b>$1,248,430</b></span></div>
+              <ul>
+                <li>Technology <b>42.1%</b></li>
+                <li>Healthcare <b>18.3%</b></li>
+                <li>Financials <b>12.7%</b></li>
+                <li>Cash <b>9.7%</b></li>
+              </ul>
+            </article>
 
-            <div className="panel topPickPanel">
-              <div className="panelHead">
-                <p className="eyebrow">Auto Opportunity Ranking</p>
-                <span>{opportunitiesLoading ? "Scanning NASDAQ-100" : decisionLabel(topOpportunity)}</span>
-              </div>
-              <div className="topPickGrid">
-                <div>
-                  <span>Top Pick This Week</span>
-                  <strong>{topOpportunity?.ticker ?? "--"}</strong>
-                  <em className={decisionTone(topOpportunity)}>{decisionLabel(topOpportunity)}</em>
-                </div>
-                <div>
-                  <span>Why It Ranks</span>
-                  <p>
-                    {topOpportunity
-                      ? `${topOpportunity.ticker} ranks highest after scanning ${weeklyReport?.scanned_count ?? 30} NASDAQ-100 names and blending AI score, signal quality, risk/reward, upside, and catalyst tone.`
-                      : "The system scans a broad NASDAQ-100 universe and ranks the strongest 10 qualified opportunities automatically."}
-                  </p>
-                </div>
-                <div>
-                  <span>Universe</span>
-                  <p>
-                    {weeklyReport?.universe_name ?? "NASDAQ-100"} coverage · {weeklyReport?.scanned_count ?? 30} names scanned for this MVP run.
-                  </p>
-                </div>
-                <div>
-                  <span>Trade Discipline</span>
-                  <p>
-                    {topOpportunity
-                      ? `Entry ${formatCurrency(topOpportunity.entry_zone.low)} - ${formatCurrency(topOpportunity.entry_zone.high)} · R/R ${topOpportunity.risk_reward_ratio} · risk ${topOpportunity.risk_level}.`
-                      : "No forced trade. If no candidate qualifies, the correct output is to wait."}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <article className="qsCard riskCard">
+              <h3>Risk Summary</h3>
+              <div><span>Portfolio Risk Score</span><strong>{portfolioRisk.highRiskPercent || 32}/100</strong></div>
+              <div><span>Volatility (30D)</span><strong>{volatility}%</strong></div>
+              <div><span>Risk Posture</span><strong>{portfolioRisk.posture}</strong></div>
+              <button type="button">View Full Risk Report</button>
+            </article>
+          </section>
 
-            <div className="panel scannerPanel">
-              <div className="panelHead">
-                <p className="eyebrow">Universe Scanner</p>
-                <span>{opportunitiesLoading ? "Live scan running" : "Weekly opportunity engine"}</span>
+          <section className="qsBottomGrid">
+            <article className="qsCard topSignalsCard">
+              <div className="qsCardHead">
+                <span>Top Signals</span>
+                <em>{opportunitiesLoading ? "Scanning" : `${opportunities.length || liveWatchlist.length} names`}</em>
               </div>
-              <div className="scannerGrid">
-                <div>
-                  <span>Universe</span>
-                  <strong>{scannerUniverse}</strong>
-                  <small>Broad NASDAQ opportunity set</small>
-                </div>
-                <div>
-                  <span>Names Scanned</span>
-                  <strong>{scannerCount}</strong>
-                  <small>MVP scan limit for stable free data</small>
-                </div>
-                <div>
-                  <span>Qualified Output</span>
-                  <strong>{opportunities.length}</strong>
-                  <small>Ranked candidates shown below</small>
-                </div>
-                <div>
-                  <span>Committee Posture</span>
-                  <strong>{topOpportunity ? decisionLabel(topOpportunity) : "Wait"}</strong>
-                  <small>{scannerDecision}</small>
-                </div>
-              </div>
-            </div>
-
-            <div className="panel portfolioRiskPanel">
-              <div className="panelHead">
-                <p className="eyebrow">Portfolio Risk System</p>
-                <span>{opportunitiesLoading ? "Calculating" : portfolioRisk.posture}</span>
-              </div>
-              <div className="riskSummary">
-                <div>
-                  <span>Suggested Posture</span>
-                  <strong>{portfolioRisk.posture}</strong>
-                  <small>{portfolioRisk.note}</small>
-                </div>
-                <div>
-                  <span>Avg Quality</span>
-                  <strong>{portfolioRisk.averageScore || "--"}</strong>
-                  <small>Blended score across Top 10</small>
-                </div>
-                <div>
-                  <span>Avg R/R</span>
-                  <strong>{portfolioRisk.averageRiskReward ? `${portfolioRisk.averageRiskReward.toFixed(2)}x` : "--"}</strong>
-                  <small>Reward versus modeled risk</small>
-                </div>
-                <div>
-                  <span>High Risk</span>
-                  <strong>{portfolioRisk.highRiskPercent}%</strong>
-                  <small>{portfolioRisk.highRiskCount} of {opportunities.length || 0} ranked names</small>
-                </div>
-              </div>
-              <div className="riskDistribution">
-                {["LOW", "MEDIUM", "HIGH"].map((risk) => {
-                  const riskCount = opportunities.filter((item) => item.risk_level === risk).length;
-                  const width = opportunities.length ? Math.round((riskCount / opportunities.length) * 100) : 0;
+              <div className="signalTable">
+                <div className="signalRow head"><span>Ticker</span><span>Signal</span><span>AI Score</span><span>Price</span><span>Upside</span><span>Momentum</span><span>Risk</span><span>Action</span></div>
+                {(opportunities.length ? opportunities.slice(0, 6) : liveWatchlist.slice(0, 6)).map((item) => {
+                  const tickerValue = "ticker" in item ? item.ticker : "";
+                  const itemSignal = "signal" in item ? item.signal : "WATCH";
+                  const itemScore = "quality_score" in item ? item.quality_score : item.aiScore;
+                  const itemPrice = "price" in item ? item.price : 0;
+                  const upsideValue = "expected_upside_percent" in item ? `${item.expected_upside_percent}%` : `${item.change.toFixed(1)}%`;
+                  const itemMomentum = "momentum" in item ? item.momentum : item.opportunity_score;
+                  const itemRisk = "risk_level" in item ? item.risk_level : item.risk;
                   return (
-                    <div key={risk}>
-                      <span>{risk}</span>
-                      <i>
-                        <em style={{ width: `${width}%` }} />
-                      </i>
-                      <b>{riskCount}</b>
-                    </div>
+                    <button className="signalRow" key={tickerValue} onClick={() => runAnalysis(tickerValue)} type="button">
+                      <b>{tickerValue}</b>
+                      <em className={signalClass(itemSignal)}>{itemSignal}</em>
+                      <span>{itemScore}</span>
+                      <span>{formatCurrency(itemPrice)}</span>
+                      <span className={upsideValue.startsWith("-") ? "down" : "up"}>{upsideValue}</span>
+                      <span>{itemMomentum}</span>
+                      <span>{itemRisk}</span>
+                      <i>↗</i>
+                    </button>
                   );
                 })}
               </div>
-            </div>
+            </article>
 
-            <details className="panel filterPanel">
-              <summary>
-                <span>
-                  <b>Advanced Filters</b>
-                  Fine-tune the scanner only when you want stricter rules.
-                </span>
-                <em>{opportunitiesLoading ? "Applying" : "Optional"}</em>
-              </summary>
-              <div className="filterGrid">
-                <label>
-                  Min AI Score
-                  <input
-                    max="100"
-                    min="0"
-                    onChange={(event) => setMinScore(Number(event.target.value))}
-                    type="number"
-                    value={minScore}
-                  />
-                </label>
-                <label>
-                  Min R/R
-                  <input
-                    max="10"
-                    min="0"
-                    onChange={(event) => setMinRiskReward(Number(event.target.value))}
-                    step="0.1"
-                    type="number"
-                    value={minRiskReward}
-                  />
-                </label>
-                <label>
-                  Signal
-                  <select onChange={(event) => setSignalFilter(event.target.value)} value={signalFilter}>
-                    <option value="ALL">All</option>
-                    <option value="BUY,WATCH">Buy + Watch</option>
-                    <option value="BUY">Buy only</option>
-                    <option value="WATCH">Watch only</option>
-                  </select>
-                </label>
-                <label>
-                  Max Risk
-                  <select onChange={(event) => setMaxRisk(event.target.value)} value={maxRisk}>
-                    <option value="ANY">Any</option>
-                    <option value="LOW">Low</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HIGH">High</option>
-                  </select>
-                </label>
-              </div>
-            </details>
-
-            <div className="panel weeklyBriefPanel">
-              <div className="panelHead">
-                <p className="eyebrow">Market Regime Engine</p>
-                <span>{opportunitiesLoading ? "Building report" : weeklyReport?.market_regime.label ?? "Awaiting scan"}</span>
-              </div>
-              <div className="regimeDeck">
-                <div className="regimePrimary">
-                  <span>Regime</span>
-                  <strong>{marketRegime?.label ?? "Awaiting Scan"}</strong>
-                  <em className={regimeTone}>{marketRegime?.risk_state ?? "Pending"}</em>
-                  <p>{marketRegime?.summary ?? "The engine monitors SPY, QQQ, and VIX to determine whether the opportunity book should be aggressive, selective, or defensive."}</p>
-                </div>
-                <div className="regimeMetrics">
-                  <MetricTile label="VIX" value={marketRegime?.vix ?? "--"} sub="Volatility pressure" />
-                  <MetricTile label="SPY Score" value={marketRegime?.spy_score ?? "--"} sub="Broad market trend" />
-                  <MetricTile label="QQQ Score" value={marketRegime?.qqq_score ?? "--"} sub="NASDAQ leadership" />
-                  <MetricTile label="Action" value={marketAction} sub="Exposure posture" />
-                </div>
-              </div>
-              <div className="briefGrid">
-                <div>
-                  <strong>Risk Interpretation</strong>
-                  <p>
-                    {marketRegime
-                      ? `${marketRegime.risk_state} market state. The scanner should ${marketAction.toLowerCase()} while respecting model entry zones.`
-                      : "Risk interpretation appears after SPY, QQQ, and VIX are evaluated."}
-                  </p>
-                </div>
-                <div>
-                  <strong>Top Idea</strong>
-                  <p>
-                    {weeklyReport?.top_idea
-                      ? `${weeklyReport.top_idea.ticker} leads with ${weeklyReport.top_idea.quality_score}/100 blended quality and ${weeklyReport.top_idea.catalyst_score}/100 catalyst score.`
-                      : "Top ranked opportunity will appear after the backend finishes scanning."}
-                  </p>
-                </div>
-                <div>
-                  <strong>Focus List</strong>
-                  <p>
-                    Catalyst focus: {weeklyReport?.catalyst_focus?.length ? weeklyReport.catalyst_focus.join(", ") : "None yet"}.
-                    {" "}Risk watch: {weeklyReport?.risk_watch?.length ? weeklyReport.risk_watch.join(", ") : "None flagged"}.
-                  </p>
-                </div>
-              </div>
-              <div className="committeePanel">
-                <div className="committeeHeader">
-                  <strong>Investment Committee Report</strong>
-                  <span>{committeeReport ? "Generated" : "Pending"}</span>
-                </div>
-                <p>{committeeReport?.recommended_action ?? "Committee recommendation will appear after the report endpoint completes."}</p>
-                <div className="committeeSections">
-                  {(committeeReport?.sections ?? []).slice(0, 2).map((section) => (
-                    <div key={section.title}>
-                      <b>{section.title}</b>
-                      <span>{section.body}</span>
-                    </div>
-                  ))}
-                </div>
-                {committeeReport?.allocation_notes?.length ? (
-                  <div className="allocationList">
-                    {committeeReport.allocation_notes.slice(0, 3).map((item) => (
-                      <span key={`${item.ticker}-${item.stance}`}>
-                        <b>{item.ticker}</b>
-                        {item.stance} · score {item.score} · risk {item.risk}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="panel opportunitiesPanel">
-              <div className="panelHead">
-                <p className="eyebrow">Weekly Opportunities</p>
-                <span>
-                  {opportunitiesLoading
-                    ? "Scanning NASDAQ-100"
-                    : `${opportunities.length} ranked names · ${weeklyReport?.scanned_count ?? 30} scanned`}
-                </span>
-              </div>
-              {opportunitiesError ? <p className="watchError">{opportunitiesError}</p> : null}
-              <div className="opportunityTable">
-                <div className="opportunityRow head">
-                  <span>Rank</span>
-                  <span>Ticker</span>
-                  <span>Decision</span>
-                  <span>Score</span>
-                  <span>Entry</span>
-                  <span>Stop</span>
-                  <span>TP1</span>
-                  <span>TP2</span>
-                  <span>Upside</span>
-                  <span>R/R</span>
-                </div>
-                {(opportunities.length ? opportunities : []).map((item) => (
-                  <button
-                    className="opportunityRow"
-                    key={`${item.rank}-${item.ticker}`}
-                    onClick={() => runAnalysis(item.ticker)}
-                    type="button"
-                  >
-                    <b>#{item.rank}</b>
-                    <strong>{item.ticker}</strong>
-                    <small>
-                      <b>{decisionLabel(item)}</b>
-                      {item.signal} · {item.risk_level}
-                    </small>
-                    <span>{item.quality_score}</span>
-                    <span>
-                      {formatCurrency(item.entry_zone.low)} - {formatCurrency(item.entry_zone.high)}
-                    </span>
-                    <span>{formatCurrency(item.stop_loss)}</span>
-                    <span>{formatCurrency(item.target_1)}</span>
-                    <span>{formatCurrency(item.target_2)}</span>
-                    <span className={item.expected_upside_percent >= 0 ? "up" : "down"}>
-                      {item.expected_upside_percent}%
-                    </span>
-                    <em>{item.risk_reward_ratio}x</em>
-                  </button>
-                ))}
-                {!opportunities.length && !opportunitiesLoading ? (
-                  <p className="emptyState">
-                    {weeklyReport?.message ??
-                      "No qualified opportunities under current filters. Lower Min R/R, allow higher risk, or expand the signal filter."}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="chartGrid">
-              <MiniChart label="Price History" data={chartData.price} tone="blue" />
-              <MiniChart label="AI Score History" data={chartData.ai} tone="amber" />
-              <MiniChart label="Momentum Trend" data={chartData.momentum} tone="green" />
-              <MiniChart label="Volatility" data={chartData.volatility} tone="red" />
-              <MiniChart label="Backtest Equity Curve" data={chartData.backtest} tone="blue" />
-            </div>
-
-            <div className="panel tradePanel">
-              <div className="panelHead">
-                <p className="eyebrow">Model Trade Plan</p>
-                <span>Research-only price levels</span>
-              </div>
-              <p className="panelNote">
-                These levels show where the model would monitor entry, invalidation, and upside. They are not buy or sell
-                instructions.
-              </p>
-              <div className="tradeGrid">
-                <MetricTile
-                  label="Entry Watch Zone"
-                  value={entryZoneText}
-                  sub="Preferred area to monitor"
-                />
-                <MetricTile
-                  label="Invalidation"
-                  value={tradePlanSource ? formatCurrency(tradePlanSource.stopLoss) : pendingTradePlanText}
-                  sub="Model stop-loss area"
-                />
-                <MetricTile
-                  label="Target 1"
-                  value={tradePlanSource ? formatCurrency(tradePlanSource.target1) : pendingTradePlanText}
-                  sub="First upside objective"
-                />
-                <MetricTile
-                  label="Target 2"
-                  value={tradePlanSource ? formatCurrency(tradePlanSource.target2) : pendingTradePlanText}
-                  sub="Extended upside scenario"
-                />
-                <MetricTile
-                  label="Support"
-                  value={typeof tradePlanSource?.support === "number" ? formatCurrency(tradePlanSource.support) : "Focused analysis"}
-                  sub="Nearest demand zone"
-                />
-                <MetricTile
-                  label="Resistance"
-                  value={
-                    typeof tradePlanSource?.resistance === "number"
-                      ? formatCurrency(tradePlanSource.resistance)
-                      : "Focused analysis"
-                  }
-                  sub="Nearest supply zone"
-                />
-                <MetricTile
-                  label="Risk / Reward"
-                  value={tradePlanSource ? `${tradePlanSource.riskReward}x` : pendingTradePlanText}
-                  sub="Reward versus modeled risk"
-                />
-                <MetricTile
-                  label="Modeled Upside"
-                  value={tradePlanSource ? `${tradePlanSource.upside}%` : pendingTradePlanText}
-                  sub="To first target"
-                />
-              </div>
-            </div>
-          </section>
-
-          <aside className="panel modelPanel">
-            <div className="panelHead">
-              <p className="eyebrow">Quant Analyst Memo</p>
-              <span>Opportunity reasoning</span>
-            </div>
-            <h2>{selectedTicker} Research Notes</h2>
-            <ul>
-              {assistantBullets.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <div className="riskMatrix">
-              <ScoreBar label="Trend Quality" value={result?.trend_score ?? 70} />
-              <ScoreBar label="Momentum Quality" value={momentum} />
-              <ScoreBar label="Volume Confirm" value={result?.volume_score ?? 68} />
-            </div>
-            <div className="dataStrip">
-              <span>RSI {result?.rsi ?? "61.8"}</span>
-              <span>MACD {result?.macd?.value ?? "1.42"}</span>
-              <span>VOL {result ? `${result.volatility}%` : "24.6%"}</span>
-            </div>
-            <div className="memoPanel">
-              <div className="panelHead compact">
-                <p className="eyebrow">Analyst Reasoning</p>
-                <span>{memoLoading ? "Generating" : researchMemo?.time_horizon ?? "Rule-based"}</span>
-              </div>
-              {memoError ? <p className="watchError">{memoError}</p> : null}
-              {researchMemo ? (
-                <>
-                  <div className="memoHeader">
-                    <strong>{researchMemo.confidence_score}</strong>
-                    <div>
-                      <b>{researchMemo.signal}</b>
-                      <span>{researchMemo.setup_type}</span>
-                    </div>
-                  </div>
-                  <p>{researchMemo.summary}</p>
-                  <div className="analystGrid">
-                    <div className="memoSection">
-                      <span>Why Attractive</span>
-                      <ul>
-                        {researchMemo.why_attractive.slice(0, 2).map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="memoSection">
-                      <span>Key Risk</span>
-                      <ul>
-                        {researchMemo.key_risks.slice(0, 2).map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="memoSection">
-                      <span>Entry Logic</span>
-                      <p>{researchMemo.entry_logic}</p>
-                    </div>
-                    <div className="memoSection">
-                      <span>Market Regime Impact</span>
-                      <p>
-                        {marketRegime
-                          ? `${marketRegime.label} / ${marketRegime.risk_state}. Position sizing should follow the ${marketAction.toLowerCase()} posture.`
-                          : "Market regime is pending; avoid increasing exposure until SPY, QQQ, and VIX context is available."}
-                      </p>
-                    </div>
-                    <div className="memoSection">
-                      <span>Catalyst Watch</span>
-                      <p>
-                        {researchMemo.catalyst_watch.top_headline} · Score {researchMemo.catalyst_watch.score}/100
-                      </p>
-                    </div>
-                    <div className="memoSection">
-                      <span>Monitor Next</span>
-                      <ul>
-                        {researchMemo.monitor_before_buying.slice(0, 2).map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </>
-              ) : !memoLoading && !memoError ? (
-                <p className="emptyState">Research memo will appear after the backend returns analysis context.</p>
-              ) : null}
-            </div>
-            <div className="companyPanel">
-              <div className="panelHead compact">
-                <p className="eyebrow">Company Intelligence</p>
-                <span>{profileLoading ? "Loading" : companyProfile?.sector ?? "Profile"}</span>
-              </div>
-              {profileError ? <p className="watchError">{profileError}</p> : null}
-              {companyProfile ? (
-                <>
-                  <h3>{companyProfile.company_name}</h3>
-                  <p>{companyProfile.industry}</p>
-                  <div className="profileGrid">
-                    <span>
-                      Market Cap
-                      <b>{companyProfile.market_cap_display}</b>
-                    </span>
-                    <span>
-                      Forward P/E
-                      <b>{companyProfile.forward_pe ?? "--"}</b>
-                    </span>
-                    <span>
-                      Beta
-                      <b>{companyProfile.beta ?? "--"}</b>
-                    </span>
-                    <span>
-                      Rev Growth
-                      <b>{formatPercent(companyProfile.revenue_growth)}</b>
-                    </span>
-                    <span>
-                      Profit Margin
-                      <b>{formatPercent(companyProfile.profit_margins)}</b>
-                    </span>
-                    <span>
-                      Analyst Target
-                      <b>{formatCurrency(companyProfile.target_mean_price ?? undefined)}</b>
-                    </span>
-                  </div>
-                  <div className="eventStrip">
-                    <span>Recommendation: {companyProfile.recommendation.toUpperCase()}</span>
-                    <span>
-                      Earnings: {companyProfile.earnings_dates.length ? companyProfile.earnings_dates.join(" / ") : "N/A"}
-                    </span>
-                  </div>
-                  {companyProfile.officers.length ? (
-                    <div className="officerList">
-                      {companyProfile.officers.slice(0, 3).map((officer) => (
-                        <span key={`${officer.name}-${officer.title}`}>
-                          <b>{officer.name}</b>
-                          {officer.title}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                  <p className="businessSummary">{companyProfile.business_summary}</p>
-                </>
-              ) : !profileLoading && !profileError ? (
-                <p className="emptyState">Company profile will appear after the backend returns fundamentals.</p>
-              ) : null}
-            </div>
-            <div className="newsPanel">
-              <div className="panelHead compact">
-                <p className="eyebrow">News & Catalysts</p>
-                <span>{newsLoading ? "Loading" : `${newsItems.length} items`}</span>
-              </div>
-              {newsError ? <p className="watchError">{newsError}</p> : null}
-              <div className="newsList">
-                {newsItems.map((item) => (
+            <article className="qsCard newsTerminalCard">
+              <div className="qsCardHead"><span>News & Insights</span><a href="/investor">View All</a></div>
+              <div className="terminalNewsList">
+                {(newsItems.length ? newsItems.slice(0, 4) : []).map((item) => (
                   <a href={item.url || "#"} key={item.title} rel="noreferrer" target="_blank">
-                    <span>{item.catalyst_type}</span>
-                    <strong>{item.title}</strong>
-                    <small>{item.source}</small>
+                    <b>{item.catalyst_type.slice(0, 2)}</b>
+                    <span>{item.title}<small>{item.source}</small></span>
                   </a>
                 ))}
-                {!newsItems.length && !newsLoading && !newsError ? (
-                  <p className="emptyState">No recent catalyst headlines returned for {selectedTicker}.</p>
-                ) : null}
+                {!newsItems.length ? <p className="emptyState">No recent catalyst headlines returned for {selectedTicker}.</p> : null}
               </div>
-            </div>
-            {result?.warnings?.length ? (
-              <div className="warningBox">
-                {result.warnings.map((warning) => (
-                  <p key={warning}>{warning}</p>
-                ))}
-              </div>
-            ) : null}
-          </aside>
-        </section>
+            </article>
+          </section>
 
-        <p className="disclaimer">For research and educational purposes only. Not financial advice.</p>
+          <footer className="qsFooter">
+            <span><i /> Market Open</span>
+            <span>S&P 500 5,349.34 <b>+0.63%</b></span>
+            <span>NASDAQ 17,188.90 <b>+0.81%</b></span>
+            <em>For research and educational purposes only. Not financial advice.</em>
+          </footer>
+        </section>
       </main>
     </>
   );
