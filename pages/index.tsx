@@ -346,6 +346,13 @@ export default function Home() {
   const [minRiskReward, setMinRiskReward] = useState(0);
   const [signalFilter, setSignalFilter] = useState("ALL");
   const [maxRisk, setMaxRisk] = useState("ANY");
+  const [assistantInput, setAssistantInput] = useState("");
+  const [assistantMessages, setAssistantMessages] = useState([
+    {
+      role: "assistant",
+      text: "Ask about the selected stock, trade plan, risk, catalyst, or market regime. I will answer from the current model output.",
+    },
+  ]);
 
   const activeRow = liveWatchlist.find((row) => row.ticker === selectedTicker) ?? liveWatchlist[0];
   const score = result?.opportunity_score ?? activeRow.aiScore;
@@ -465,6 +472,9 @@ export default function Home() {
   const entryZoneText = tradePlanSource
     ? `${formatCurrency(tradePlanSource.entryZone.low)} - ${formatCurrency(tradePlanSource.entryZone.high)}`
     : pendingTradePlanText;
+  const analysisDataState = result ? "Live analysis" : loading ? "Loading live data" : "Watchlist proxy";
+  const chartDataState = result?.charts ? "Live/recent price data" : "Sample trend preview";
+  const tradePlanDataState = tradePlanSource ? "Calculated by model" : "Run analysis required";
 
   const chartData = useMemo(() => {
     if (result?.charts) {
@@ -749,6 +759,50 @@ export default function Home() {
     setResult(null);
   }
 
+  function buildAssistantReply(question: string) {
+    const normalized = question.toLowerCase();
+    if (!result && !researchMemo) {
+      return `I need a focused analysis for ${selectedTicker} first. Click Run or New Analysis so I can use live/recent market data instead of watchlist proxy data.`;
+    }
+    if (normalized.includes("risk")) {
+      return researchMemo?.key_risks?.[0] ?? `${selectedTicker} risk level is ${riskLevel}. Watch volatility, stop-loss discipline, and market regime before sizing any position.`;
+    }
+    if (normalized.includes("entry") || normalized.includes("buy") || normalized.includes("al")) {
+      return tradePlanSource
+        ? `${selectedTicker} entry watch zone is ${formatCurrency(tradePlanSource.entryZone.low)} - ${formatCurrency(tradePlanSource.entryZone.high)}. Invalidation is near ${formatCurrency(tradePlanSource.stopLoss)}. This is research only, not a buy instruction.`
+        : `Run analysis first so the model can calculate an entry zone, stop-loss, and targets for ${selectedTicker}.`;
+    }
+    if (normalized.includes("target") || normalized.includes("tp") || normalized.includes("upside")) {
+      return tradePlanSource
+        ? `${selectedTicker} target 1 is ${formatCurrency(tradePlanSource.target1)}, target 2 is ${formatCurrency(tradePlanSource.target2)}, with modeled upside of ${tradePlanSource.upside}%.`
+        : `Target levels are not available until analysis is completed.`;
+    }
+    if (normalized.includes("news") || normalized.includes("catalyst") || normalized.includes("haber")) {
+      return researchMemo?.catalyst_watch?.top_headline
+        ? `Current catalyst watch: ${researchMemo.catalyst_watch.top_headline}. Catalyst score is ${researchMemo.catalyst_watch.score}/100.`
+        : `No strong catalyst headline is loaded yet for ${selectedTicker}.`;
+    }
+    if (normalized.includes("market") || normalized.includes("regime") || normalized.includes("piyasa")) {
+      return marketRegime
+        ? `Current regime is ${marketRegime.label} / ${marketRegime.risk_state}. Suggested posture: ${marketAction}.`
+        : "Market regime is still loading. The engine uses SPY, QQQ, and VIX context.";
+    }
+    return researchMemo?.summary ?? `${selectedTicker} is classified as ${signal} with score ${score}/100. Monitor the trade plan, market regime, and risk/reward before making any decision.`;
+  }
+
+  function onAssistantSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const question = assistantInput.trim();
+    if (!question) return;
+    const reply = buildAssistantReply(question);
+    setAssistantMessages((messages) => [
+      ...messages,
+      { role: "user", text: question },
+      { role: "assistant", text: reply },
+    ]);
+    setAssistantInput("");
+  }
+
   return (
     <>
       <Head>
@@ -812,6 +866,10 @@ export default function Home() {
               </div>
             ))}
           </section>
+          <div className="dataStateBar">
+            <span><b>Live</b> ticker analysis, watchlist, opportunity scanner, research memo, company profile, news</span>
+            <span><b>Sample</b> market tape, portfolio exposure allocation, broad sentiment split</span>
+          </div>
 
           {error ? <div className="errorBox">{error}</div> : null}
 
@@ -819,7 +877,7 @@ export default function Home() {
             <article className="qsCard topOpportunityCard">
               <div className="qsCardHead">
                 <span>Top Opportunity</span>
-                <button type="button">☆</button>
+                <button type="button">{analysisDataState}</button>
               </div>
               <h2>{selectedTicker}</h2>
               <p>{companyProfile?.company_name ?? `${selectedTicker} research book`}</p>
@@ -840,7 +898,7 @@ export default function Home() {
             <article className="qsCard chartTerminalCard">
               <div className="qsCardHead">
                 <span>Price Chart</span>
-                <div className="chartTabs"><b>1D</b><b>1W</b><b>1M</b><b>3M</b><b>1Y</b></div>
+                <div className="chartTabs"><em>{chartDataState}</em><b>1D</b><b>1W</b><b>1M</b><b>3M</b><b>1Y</b></div>
               </div>
               <TerminalPriceChart data={chartData.price} />
             </article>
@@ -850,19 +908,40 @@ export default function Home() {
                 <span>AI Analyst</span>
                 <button type="button" onClick={() => runAnalysis(selectedTicker)}>New Analysis</button>
               </div>
+              {loading ? <p className="loadingText">Loading live/recent market analysis for {selectedTicker}...</p> : null}
+              {memoError ? <p className="watchError">{memoError}</p> : null}
               <h3>Summary</h3>
               <p>{researchMemo?.summary ?? assistantBullets[0]}</p>
               <div className="aiStats">
                 <span><b>{researchMemo?.signal ?? signal}</b>Bias</span>
                 <span><b>{researchMemo?.confidence_score ?? score}%</b>Confidence</span>
               </div>
-              <button className="askButton" type="button">Ask AI Assistant</button>
+              <div className="assistantChat">
+                <div>
+                  {assistantMessages.slice(-4).map((message, index) => (
+                    <p className={message.role} key={`${message.role}-${index}`}>{message.text}</p>
+                  ))}
+                </div>
+                <form onSubmit={onAssistantSubmit}>
+                  <input
+                    aria-label="Ask AI Assistant"
+                    onChange={(event) => setAssistantInput(event.target.value)}
+                    placeholder="Ask about risk, entry, target..."
+                    value={assistantInput}
+                  />
+                  <button type="submit">Ask</button>
+                </form>
+              </div>
             </article>
           </section>
 
           <section className="qsSecondaryGrid">
             <article className="qsCard tradeTerminalCard">
-              <h3>Trade Plan</h3>
+              <div className="qsCardHead">
+                <span>Trade Plan</span>
+                <em>{tradePlanDataState}</em>
+              </div>
+              {!tradePlanSource ? <p className="loadingText">Run analysis to calculate entry, stop-loss, targets, and risk/reward.</p> : null}
               {[
                 ["Entry Zone", entryZoneText],
                 ["Stop Loss", tradePlanSource ? formatCurrency(tradePlanSource.stopLoss) : pendingTradePlanText],
@@ -876,13 +955,13 @@ export default function Home() {
             </article>
 
             <article className="qsCard sentimentCard">
-              <h3>Market Sentiment</h3>
+              <div className="qsCardHead"><span>Market Sentiment</span><em>Sample split</em></div>
               <div className="sentimentDial"><strong>{marketRegime?.spy_score ?? 64}</strong><span>{marketRegime?.risk_state ?? "Bullish"}</span></div>
               <div className="sentimentStats"><span>Bullish 64%</span><span>Neutral 24%</span><span>Bearish 12%</span></div>
             </article>
 
             <article className="qsCard exposureCard">
-              <h3>Portfolio Exposure</h3>
+              <div className="qsCardHead"><span>Portfolio Exposure</span><em>Sample allocation</em></div>
               <div className="donut"><span>Total Value<br /><b>$1,248,430</b></span></div>
               <ul>
                 <li>Technology <b>42.1%</b></li>
@@ -893,7 +972,7 @@ export default function Home() {
             </article>
 
             <article className="qsCard riskCard">
-              <h3>Risk Summary</h3>
+              <div className="qsCardHead"><span>Risk Summary</span><em>Calculated</em></div>
               <div><span>Portfolio Risk Score</span><strong>{portfolioRisk.highRiskPercent || 32}/100</strong></div>
               <div><span>Volatility (30D)</span><strong>{volatility}%</strong></div>
               <div><span>Risk Posture</span><strong>{portfolioRisk.posture}</strong></div>
