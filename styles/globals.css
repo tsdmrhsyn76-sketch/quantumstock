@@ -1263,36 +1263,58 @@ h2 {
 
 .investorShell {
   margin: 0 auto;
-  max-width: 1320px;
-  padding: 16px;
+  max-width: 1440px;
+  padding: 14px;
 }
 
 .investorHero,
 .investorPanel,
 .investorSection,
 .revenueGrid article,
+.packageCard,
+.roadmapGrid article,
 .summaryBand {
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(11, 21, 33, 0.92), rgba(4, 9, 15, 0.94));
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
+  background:
+    linear-gradient(180deg, rgba(12, 22, 34, 0.94), rgba(4, 9, 15, 0.96)),
+    rgba(4, 9, 15, 0.96);
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(16px);
 }
 
 .investorHero {
-  min-height: 520px;
+  min-height: 620px;
   padding: 18px;
   display: grid;
   align-content: space-between;
-  gap: 28px;
+  gap: 34px;
+  overflow: hidden;
+  position: relative;
 }
 
-.investorHero nav {
+.investorHero::before {
+  background:
+    linear-gradient(115deg, rgba(245, 158, 11, 0.18), transparent 36%),
+    radial-gradient(circle at 78% 22%, rgba(56, 189, 248, 0.18), transparent 26rem);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.investorHero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.investorNav {
   align-items: center;
   display: flex;
   justify-content: space-between;
 }
 
-.investorHero nav a,
-.investorHero nav span {
+.investorNav a,
+.investorNav span {
   color: #cbd5e1;
   font-size: 11px;
   font-weight: 900;
@@ -1301,40 +1323,115 @@ h2 {
   text-transform: uppercase;
 }
 
+.investorNav a {
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  color: #fde68a;
+  padding: 10px 12px;
+}
+
+.investorHeroGrid {
+  align-items: end;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.investorHeroCopy {
+  max-width: 980px;
+}
+
 .investorHero h1 {
-  max-width: 900px;
-  font-size: clamp(40px, 7vw, 86px);
-  line-height: 0.94;
+  max-width: 980px;
+  font-size: clamp(42px, 7vw, 92px);
+  line-height: 0.92;
+  margin-top: 10px;
 }
 
 .investorHero p:not(.kicker),
 .sectionHead p,
 .investorPanel p,
-.revenueGrid p {
+.revenueGrid p,
+.packageCard li,
+.opportunityStack p,
+.roadmapGrid p,
+.summaryGrid p,
+.investorBrief p {
   color: #cbd5e1;
   font-size: 14px;
   line-height: 1.6;
 }
 
 .investorHero p:not(.kicker) {
-  max-width: 680px;
+  max-width: 780px;
+  margin: 18px 0 0;
+}
+
+.investorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.investorActions a {
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  color: #fde68a;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 12px 14px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.investorActions a:last-child {
+  border-color: rgba(56, 189, 248, 0.28);
+  color: #bae6fd;
+}
+
+.investorBrief {
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(2, 6, 23, 0.58);
+  padding: 18px;
+}
+
+.investorBrief span,
+.packageCard span,
+.roadmapGrid span {
+  color: #67e8f9;
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.investorBrief strong {
+  color: #f8fafc;
+  display: block;
+  font-size: 24px;
+  line-height: 1.08;
+  margin-top: 9px;
 }
 
 .investorStats,
 .investorGrid,
-.revenueGrid {
+.revenueGrid,
+.packageGrid,
+.roadmapGrid,
+.summaryGrid {
   display: grid;
   gap: 10px;
 }
 
 .investorStats {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .investorStats div,
 .summaryBand {
   border: 1px solid rgba(245, 158, 11, 0.18);
-  background: rgba(245, 158, 11, 0.06);
+  background: rgba(245, 158, 11, 0.07);
   padding: 12px;
 }
 
@@ -1353,7 +1450,8 @@ h2 {
   color: #f8fafc;
   display: block;
   font-family: Menlo, Consolas, monospace;
-  font-size: 18px;
+  font-size: 16px;
+  line-height: 1.25;
   margin-top: 7px;
 }
 
@@ -1364,12 +1462,12 @@ h2 {
 
 .investorPanel,
 .investorSection {
-  padding: 16px;
+  padding: 18px;
 }
 
 .investorPanel h2,
 .sectionHead h2 {
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1.08;
   margin-top: 8px;
 }
@@ -1383,17 +1481,99 @@ h2 {
 }
 
 .revenueGrid {
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .revenueGrid article {
-  padding: 14px;
+  padding: 16px;
 }
 
-.revenueGrid h3 {
+.revenueGrid h3,
+.packageCard h3,
+.roadmapGrid h3 {
   color: #f8fafc;
-  font-size: 17px;
+  font-size: 18px;
   margin: 10px 0 0;
+}
+
+.packageGrid {
+  margin-top: 16px;
+}
+
+.packageCard {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.packageCard.featured {
+  border-color: rgba(34, 197, 94, 0.34);
+  background:
+    linear-gradient(180deg, rgba(20, 83, 45, 0.28), rgba(4, 9, 15, 0.96)),
+    rgba(4, 9, 15, 0.96);
+}
+
+.packageCard strong {
+  color: #f8fafc;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.packageCard ul {
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.opportunityStack {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.opportunityStack div {
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  padding-top: 12px;
+}
+
+.opportunityStack strong {
+  color: #f8fafc;
+  display: block;
+  font-size: 16px;
+}
+
+.roadmapGrid {
+  margin-top: 16px;
+}
+
+.roadmapGrid article {
+  padding: 16px;
+}
+
+.summaryGrid {
+  margin-top: 16px;
+}
+
+.summaryGrid div {
+  align-items: start;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 12px minmax(0, 1fr);
+  padding-top: 12px;
+}
+
+.summaryGrid span {
+  background: #22c55e;
+  display: block;
+  height: 8px;
+  margin-top: 7px;
+  width: 8px;
+}
+
+.summaryGrid p {
+  margin: 0;
 }
 
 .summaryBand {
@@ -1410,6 +1590,10 @@ h2 {
 }
 
 @media (min-width: 820px) {
+  .investorHeroGrid {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+
   .investorGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1420,6 +1604,18 @@ h2 {
 
   .revenueGrid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .packageGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .roadmapGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1432,5 +1628,18 @@ h2 {
   .investorStats,
   .summaryBand {
     display: grid;
+  }
+
+  .investorHero {
+    min-height: 680px;
+  }
+
+  .investorHero h1 {
+    font-size: 42px;
+  }
+
+  .investorActions a,
+  .investorNav a {
+    width: 100%;
   }
 }

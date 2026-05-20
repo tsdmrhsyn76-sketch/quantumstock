@@ -1,40 +1,100 @@
 import Head from "next/head";
 
+const thesisMetrics = [
+  { label: "Product wedge", value: "AI equity research terminal" },
+  { label: "Initial market", value: "Active investors + advisors" },
+  { label: "Model", value: "SaaS, B2B, API licensing" },
+  { label: "Long-term path", value: "Investment intelligence OS" },
+];
+
 const revenueStreams = [
   {
-    title: "Retail Pro Subscription",
+    title: "Retail Pro",
     price: "$29 - $99 / month",
-    text: "Advanced opportunity scans, AI analyst memos, watchlists, market regime context, and model trade plans for active investors.",
+    text: "Advanced opportunity scans, AI analyst memos, watchlists, market regime context, and model trade plans for self-directed investors.",
   },
   {
-    title: "Professional Research Seat",
+    title: "Professional Seat",
     price: "$199 - $499 / month",
-    text: "Higher scan limits, saved portfolios, deeper risk analytics, exportable reports, alerts, and institutional research workflows.",
+    text: "Higher scan limits, saved portfolios, alerts, exportable research, risk dashboards, and institutional-grade workflow controls.",
   },
   {
-    title: "B2B / Advisor License",
+    title: "Team / Advisor License",
     price: "$1,500+ / month",
-    text: "Team dashboards for advisory firms, family offices, educators, boutique funds, and market research businesses.",
+    text: "Multi-seat dashboards for advisory teams, family offices, boutique funds, research publishers, and financial education businesses.",
   },
   {
     title: "API / White Label",
-    price: "Usage-based",
-    text: "Opportunity scoring, trade-plan levels, market regime intelligence, and AI explanations embedded into partner products.",
+    price: "Usage based",
+    text: "Opportunity scoring, market regime intelligence, trade-plan levels, and explainable AI research embedded into partner platforms.",
+  },
+];
+
+const packages = [
+  {
+    name: "Starter",
+    audience: "Active retail investors",
+    price: "$29",
+    features: ["Core ticker analysis", "Popular tech watchlist", "Market regime snapshot"],
+  },
+  {
+    name: "Pro",
+    audience: "Serious operators",
+    price: "$99",
+    features: ["NASDAQ opportunity scanner", "AI analyst memo", "Model trade plan", "Risk/reward ranking"],
+    featured: true,
+  },
+  {
+    name: "Desk",
+    audience: "Professionals and teams",
+    price: "$499+",
+    features: ["Saved portfolios", "Report export", "Alerts", "Team workflows"],
+  },
+];
+
+const marketOpportunity = [
+  {
+    title: "Fragmented research workflow",
+    text: "Investors jump between screeners, charting tools, news feeds, spreadsheets, and social commentary without a unified decision layer.",
+  },
+  {
+    title: "AI adoption window",
+    text: "The market is moving from static dashboards toward AI systems that synthesize data, explain risk, and produce repeatable research output.",
+  },
+  {
+    title: "Expandable customer base",
+    text: "The same intelligence layer can serve retail users first, then advisors, educators, publishers, fintech apps, and boutique institutions.",
   },
 ];
 
 const roadmap = [
-  "MVP: live stock analysis, NASDAQ opportunity scan, risk system, analyst memo",
-  "Phase 2: accounts, saved watchlists, alerts, improved data providers, report export",
-  "Phase 3: portfolio engine, sector exposure, correlation, drawdown, allocation simulator",
-  "Phase 4: AI chat copilot, institutional workflows, API licensing, white-label dashboards",
+  {
+    phase: "Now",
+    title: "MVP terminal",
+    text: "Live stock analysis, NASDAQ-100 opportunity scan, market regime engine, portfolio risk posture, and analyst reasoning.",
+  },
+  {
+    phase: "Next",
+    title: "Retention layer",
+    text: "User accounts, saved watchlists, alerts, exportable reports, improved data providers, and deeper company intelligence.",
+  },
+  {
+    phase: "Scale",
+    title: "Portfolio intelligence",
+    text: "Correlation, sector exposure, drawdown monitoring, allocation simulation, and weekly investment committee reports.",
+  },
+  {
+    phase: "Platform",
+    title: "Licensing engine",
+    text: "AI copilot, advisor workflows, API access, embedded research widgets, and white-label dashboards for partners.",
+  },
 ];
 
-const marketSegments = [
-  "Active retail investors seeking disciplined research",
-  "Financial educators and market research publishers",
-  "Independent advisors and boutique wealth teams",
-  "Small funds and family offices needing lightweight research infrastructure",
+const investorSummary = [
+  "Clear wedge: start with opportunity discovery for equity investors.",
+  "Revenue expansion: subscription first, professional seats second, B2B/API licensing third.",
+  "Product defensibility: workflow data, scoring logic, research templates, and explainable AI output compound over time.",
+  "Strategic vision: become the intelligence layer between market data and investment decision workflows.",
 ];
 
 export default function InvestorPage() {
@@ -44,75 +104,93 @@ export default function InvestorPage() {
         <title>QuantumStock | Investor Overview</title>
         <meta
           name="description"
-          content="QuantumStock investor overview, business model, revenue streams, and product roadmap."
+          content="QuantumStock investor overview, business model, subscription packages, market opportunity, roadmap, and investor summary."
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
       <main className="investorShell">
         <header className="investorHero">
-          <nav>
+          <nav className="investorNav" aria-label="Investor navigation">
             <a href="/">Terminal</a>
             <span>Investor Overview</span>
           </nav>
-          <div>
-            <p className="kicker">QuantumStock</p>
-            <h1>Institutional AI Investment OS for Equity Opportunity Discovery</h1>
-            <p>
-              QuantumStock helps investors scan equity markets, identify high-quality setups, understand risk, and
-              generate analyst-style reasoning before capital is deployed.
-            </p>
-          </div>
+
+          <section className="investorHeroGrid">
+            <div className="investorHeroCopy">
+              <p className="kicker">QuantumStock</p>
+              <h1>AI-native equity research infrastructure for the next generation of investors.</h1>
+              <p>
+                QuantumStock turns market data, technical signals, company context, and risk discipline into a
+                repeatable research workflow. The first product is a premium AI investment terminal; the larger
+                opportunity is a licensed intelligence layer for advisors, publishers, fintech platforms, and boutique
+                institutions.
+              </p>
+              <div className="investorActions">
+                <a href="#summary">Investor Summary</a>
+                <a href="#revenue">Revenue Model</a>
+              </div>
+            </div>
+
+            <aside className="investorBrief" aria-label="Investment thesis">
+              <span>Investment Thesis</span>
+              <strong>From stock scanner to institutional research OS</strong>
+              <p>
+                The product begins with high-frequency research pain: finding quality opportunities, understanding risk,
+                and explaining the setup quickly. That wedge can expand into saved workflows, team seats, APIs, and
+                white-label research infrastructure.
+              </p>
+            </aside>
+          </section>
+
           <section className="investorStats">
-            <div>
-              <span>Core Product</span>
-              <strong>AI Research Terminal</strong>
-            </div>
-            <div>
-              <span>Initial Universe</span>
-              <strong>NASDAQ-100</strong>
-            </div>
-            <div>
-              <span>Business Model</span>
-              <strong>SaaS + B2B</strong>
-            </div>
+            {thesisMetrics.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </div>
+            ))}
           </section>
         </header>
 
-        <section className="investorGrid">
+        <section className="investorGrid investorThesisGrid">
           <article className="investorPanel large">
             <p className="eyebrow">Problem</p>
-            <h2>Most investors have data, but not an operating system for decisions.</h2>
+            <h2>Investors have more data than ever, but the decision workflow is still fragmented.</h2>
             <p>
-              Retail and professional users are surrounded by charts, news, social sentiment, and raw market data. The
-              gap is synthesis: which opportunities matter, what risk should be respected, and what should be monitored
-              before acting.
+              Most users combine charting tools, screeners, market news, spreadsheets, and intuition. The missing layer
+              is synthesis: ranking what matters, explaining why it matters, and making the risk visible before capital
+              is deployed.
             </p>
           </article>
 
           <article className="investorPanel">
             <p className="eyebrow">Solution</p>
-            <h2>Opportunity engine plus explainable AI research.</h2>
+            <h2>A research operating system, not another static dashboard.</h2>
             <p>
-              QuantumStock ranks equities, produces model trade plans, evaluates market regime, and explains the setup
-              through a structured analyst memo.
+              QuantumStock scores opportunities, builds model trade plans, evaluates market regime, summarizes company
+              context, and produces analyst-style reasoning in one workflow.
             </p>
           </article>
 
           <article className="investorPanel">
             <p className="eyebrow">Differentiation</p>
-            <h2>Not a dashboard. A research workflow.</h2>
+            <h2>Explainable AI plus disciplined market structure.</h2>
             <p>
-              The product combines opportunity scoring, entry discipline, risk/reward, catalyst context, and portfolio
-              posture instead of showing isolated charts.
+              The platform connects trend, momentum, volatility, volume, risk/reward, catalysts, and portfolio posture
+              so the output is actionable rather than generic.
             </p>
           </article>
         </section>
 
-        <section className="investorSection">
+        <section className="investorSection" id="revenue">
           <div className="sectionHead">
             <p className="eyebrow">Revenue Model</p>
-            <h2>Multiple monetization paths from individual users to institutional licensing.</h2>
+            <h2>Four monetization paths with a natural expansion ladder.</h2>
+            <p>
+              QuantumStock can start with individual subscriptions, then move upmarket into professional seats, team
+              licensing, and embedded intelligence products.
+            </p>
           </div>
           <div className="revenueGrid">
             {revenueStreams.map((item) => (
@@ -125,50 +203,103 @@ export default function InvestorPage() {
           </div>
         </section>
 
+        <section className="investorSection">
+          <div className="sectionHead">
+            <p className="eyebrow">Subscription Packages</p>
+            <h2>Pricing architecture designed for retail entry and professional expansion.</h2>
+          </div>
+          <div className="packageGrid">
+            {packages.map((item) => (
+              <article className={item.featured ? "packageCard featured" : "packageCard"} key={item.name}>
+                <div>
+                  <span>{item.audience}</span>
+                  <h3>{item.name}</h3>
+                </div>
+                <strong>{item.price}</strong>
+                <ul>
+                  {item.features.map((feature) => (
+                    <li key={feature}>{feature}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className="investorGrid">
+          <article className="investorPanel large">
+            <p className="eyebrow">Market Opportunity</p>
+            <h2>AI research infrastructure can sit between raw market data and investor decisions.</h2>
+            <div className="opportunityStack">
+              {marketOpportunity.map((item) => (
+                <div key={item.title}>
+                  <strong>{item.title}</strong>
+                  <p>{item.text}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+
           <article className="investorPanel">
             <p className="eyebrow">Target Customers</p>
-            <h2>Built for research-heavy investors.</h2>
+            <h2>Built for users who need repeatable research output.</h2>
             <ul>
-              {marketSegments.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
+              <li>Active self-directed investors</li>
+              <li>Financial educators and research publishers</li>
+              <li>Independent advisors and boutique wealth teams</li>
+              <li>Small funds and family offices</li>
             </ul>
           </article>
 
           <article className="investorPanel">
             <p className="eyebrow">Why Now</p>
-            <h2>AI is moving from content generation into decision infrastructure.</h2>
+            <h2>AI is shifting from content generation to decision infrastructure.</h2>
             <p>
-              Investors need tools that combine market data, risk controls, and explainable AI. QuantumStock positions
-              itself as the intelligence layer between raw data and disciplined research output.
+              Investors do not only need summaries. They need systems that connect signals, risk controls, and
+              explainable output inside a workflow they can repeat every week.
             </p>
-          </article>
-
-          <article className="investorPanel large">
-            <p className="eyebrow">Roadmap</p>
-            <h2>From MVP terminal to institutional research platform.</h2>
-            <ol>
-              {roadmap.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ol>
           </article>
         </section>
 
         <section className="investorSection">
           <div className="sectionHead">
+            <p className="eyebrow">Roadmap</p>
+            <h2>From MVP terminal to licensed investment intelligence platform.</h2>
+          </div>
+          <div className="roadmapGrid">
+            {roadmap.map((item) => (
+              <article key={item.phase}>
+                <span>{item.phase}</span>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="investorSection" id="summary">
+          <div className="sectionHead">
             <p className="eyebrow">Investor Summary</p>
-            <h2>QuantumStock is building an AI-native equity research operating system.</h2>
+            <h2>QuantumStock is building the AI decision layer for equity research workflows.</h2>
             <p>
-              The near-term opportunity is a subscription research terminal for active investors. The larger opportunity
-              is B2B licensing: advisors, research publishers, fintech platforms, and boutique institutions can use
-              QuantumStock scoring and explanation infrastructure inside their own workflows.
+              The near-term wedge is a premium research terminal for active equity investors. The strategic opportunity
+              is a platform business: reusable scoring, risk, reporting, and explanation infrastructure that can be sold
+              as seats, team licenses, APIs, and white-label products.
             </p>
           </div>
+
+          <div className="summaryGrid">
+            {investorSummary.map((item) => (
+              <div key={item}>
+                <span />
+                <p>{item}</p>
+              </div>
+            ))}
+          </div>
+
           <div className="summaryBand">
             <strong>QuantumStock</strong>
-            <span>Find better opportunities. Understand the risk.</span>
+            <span>Find better opportunities. Understand the risk. Build repeatable research.</span>
           </div>
         </section>
       </main>
