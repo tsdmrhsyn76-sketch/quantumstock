@@ -1464,7 +1464,11 @@ h2 {
 }
 
 .qsBottomGrid {
-  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.92fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+}
+
+.watchlistTerminalCard {
+  grid-column: 1 / -1;
 }
 
 .qsCard {
@@ -1868,6 +1872,7 @@ h2 {
 .watchlistGrid {
   display: grid;
   gap: 7px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .watchlistGrid button {
@@ -1878,7 +1883,7 @@ h2 {
   cursor: pointer;
   display: grid;
   gap: 8px;
-  grid-template-columns: 58px 1fr 58px;
+  grid-template-columns: 1fr;
   padding: 9px;
   text-align: left;
 }
@@ -1902,7 +1907,7 @@ h2 {
 }
 
 .watchlistGrid em {
-  text-align: right;
+  text-align: left;
 }
 
 .terminalNewsList {
@@ -2188,6 +2193,10 @@ h2 {
 
   .signalRow {
     min-width: 780px;
+  }
+
+  .watchlistGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .qsFooter {
