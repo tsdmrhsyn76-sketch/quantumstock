@@ -911,7 +911,7 @@ export default function Home() {
             <article className="qsCard topOpportunityCard">
               <div className="qsCardHead">
                 <span>Top Opportunity</span>
-                <em className="statusPill">{analysisDataState}</em>
+                <a className="statusPill" href="/stock-screener">{analysisDataState}</a>
               </div>
               <h2>{selectedTicker}</h2>
               <p>{companyProfile?.company_name ?? `${selectedTicker} research book`}</p>
@@ -1032,6 +1032,7 @@ export default function Home() {
                 <span>Top Signals</span>
                 <em>{opportunitiesLoading ? "Scanning" : `${opportunities.length || liveWatchlist.length} names`}</em>
               </div>
+              <p className="tableHint">Click any row or Analyze to run a focused stock analysis.</p>
               <div className="signalTable">
                 <div className="signalRow head"><span>Ticker</span><span>Signal</span><span>AI Score</span><span>Price</span><span>Upside</span><span>Momentum</span><span>Risk</span><span>Action</span></div>
                 {(opportunities.length ? opportunities.slice(0, 6) : liveWatchlist.slice(0, 6)).map((item) => {
@@ -1051,10 +1052,36 @@ export default function Home() {
                       <span className={upsideValue.startsWith("-") ? "down" : "up"}>{upsideValue}</span>
                       <span>{itemMomentum}</span>
                       <span>{itemRisk}</span>
-                      <i>↗</i>
+                      <i>Analyze</i>
                     </button>
                   );
                 })}
+              </div>
+            </article>
+
+            <article className="qsCard watchlistTerminalCard">
+              <div className="qsCardHead">
+                <span>Watchlist Universe</span>
+                <a href="/stock-screener">Open Screener</a>
+              </div>
+              <p className="tableHint">
+                General technology list. Click a ticker to load it into the analysis engine.
+              </p>
+              <div className="watchlistGrid">
+                {liveWatchlist.slice(0, 10).map((row) => (
+                  <button
+                    className={row.ticker === selectedTicker ? "active" : ""}
+                    key={row.ticker}
+                    onClick={() => runAnalysis(row.ticker)}
+                    type="button"
+                  >
+                    <b>{row.ticker}</b>
+                    <span>{formatCurrency(row.price)}</span>
+                    <em className={row.change >= 0 ? "up" : "down"}>
+                      {row.change >= 0 ? "+" : ""}{row.change.toFixed(2)}%
+                    </em>
+                  </button>
+                ))}
               </div>
             </article>
 
