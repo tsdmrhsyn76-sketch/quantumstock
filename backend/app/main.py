@@ -162,6 +162,7 @@ class IndicatorPack:
     ma20: float
     ma50: float
     ma200: float
+    atr_14: float
     volatility_20: float
     rsi: float
     macd: float
@@ -686,6 +687,22 @@ def _calculate_rsi(close: pd.Series, window: int = 14) -> pd.Series:
     return 100 - (100 / (1 + rs))
 
 
+def _calculate_atr(history: pd.DataFrame, window: int = 14) -> pd.Series:
+    high = history["High"]
+    low = history["Low"]
+    close = history["Close"]
+    previous_close = close.shift(1)
+    true_range = pd.concat(
+        [
+            high - low,
+            (high - previous_close).abs(),
+            (low - previous_close).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
+    return true_range.ewm(alpha=1 / window, min_periods=window, adjust=False).mean()
+
+
 def _calculate_indicators(history_1y: pd.DataFrame, history_3mo: pd.DataFrame) -> IndicatorPack:
     close = history_1y["Close"]
     volume = history_1y["Volume"]
@@ -709,6 +726,7 @@ def _calculate_indicators(history_1y: pd.DataFrame, history_3mo: pd.DataFrame) -
         ma20=_as_float(close.rolling(20).mean().iloc[-1]),
         ma50=_as_float(close.rolling(50).mean().iloc[-1]),
         ma200=_as_float(close.rolling(200).mean().iloc[-1]),
+        atr_14=_as_float(_calculate_atr(history_1y).iloc[-1], fallback=current_price * 0.03),
         volatility_20=_as_float(volatility_20),
         rsi=_as_float(_calculate_rsi(close).iloc[-1], fallback=50),
         macd=_as_float(macd_line.iloc[-1]),
@@ -872,6 +890,72 @@ def _score_opportunity(ind: IndicatorPack) -> dict[str, Any]:
     }
 
 
+def _calculate_quantum_score(history: pd.DataFrame, ind: IndicatorPack) -> dict[str, Any]:
+    """Secondary explainable scoring model used for investor-facing quant logic."""
+    current_price = ind.current_price
+    current_rsi = ind.rsi
+    current_atr = max(ind.atr_14, current_price * 0.01)
+
+    rsi_score = 50
+    if 45 <= current_rsi <= 65:
+        rsi_score = 82
+    elif 35 <= current_rsi < 45:
+        rsi_score = 70
+    elif 65 < current_rsi <= 75:
+        rsi_score = 58
+    elif current_rsi < 35:
+        rsi_score = 62
+    elif current_rsi > 75:
+        rsi_score = 28
+
+    trend_score = 30
+    if current_price > ind.ma50:
+        trend_score += 32
+    if current_price > ind.ma200:
+        trend_score += 28
+    if ind.ma50 > ind.ma200:
+        trend_score += 10
+    trend_score = _bounded(trend_score)
+
+    volume_ratio = ind.volume / ind.avg_volume_20 if ind.avg_volume_20 else 1
+    volume_score = _bounded(45 + min(volume_ratio, 2.4) * 22)
+    risk_score = _bounded(100 - ind.volatility_20 * 1.4)
+
+    opportunity_score = _bounded(
+        trend_score * 0.38
+        + rsi_score * 0.27
+        + volume_score * 0.18
+        + risk_score * 0.17
+    )
+
+    entry_low = round(max(ind.support, current_price - current_atr * 1.2), 2)
+    entry_high = round(current_price + current_atr * 0.35, 2)
+    if entry_low > entry_high:
+        entry_low, entry_high = entry_high, entry_low
+
+    stop_loss = round(current_price - current_atr * 2, 2)
+    target_1 = round(current_price + current_atr * 3, 2)
+    target_2 = round(current_price + current_atr * 4, 2)
+    risk = max(current_price - stop_loss, 0.01)
+    reward = max(target_1 - current_price, 0.01)
+
+    return {
+        "model": "Quantum Opportunity Score v0.1",
+        "opportunity_score": opportunity_score,
+        "trend_score": trend_score,
+        "rsi_score": _bounded(rsi_score),
+        "volume_score": volume_score,
+        "risk_score": risk_score,
+        "atr_14": round(current_atr, 2),
+        "entry_zone": {"low": entry_low, "high": entry_high},
+        "stop_loss": stop_loss,
+        "target_1": target_1,
+        "target_2": target_2,
+        "risk_reward_ratio": round(reward / risk, 2),
+        "methodology": "Weighted blend of trend, RSI health, volume confirmation, volatility risk, and ATR-based trade levels.",
+    }
+
+
 def _analyze_symbol(symbol: str) -> dict[str, Any]:
     normalized_symbol = symbol.strip().upper()
     cache_key = f"analysis:{normalized_symbol}"
@@ -883,6 +967,7 @@ def _analyze_symbol(symbol: str) -> dict[str, Any]:
     history_3mo = _download_history(normalized_symbol, "3mo")
     indicators = _calculate_indicators(history_1y, history_3mo)
     opportunity = _score_opportunity(indicators)
+    quantum_model = _calculate_quantum_score(history_1y, indicators)
     chart_series = _build_chart_series(history_1y, opportunity)
     close = history_1y["Close"]
     previous_close = _as_float(close.iloc[-2], fallback=indicators.current_price) if len(close) > 1 else indicators.current_price
@@ -911,6 +996,7 @@ def _analyze_symbol(symbol: str) -> dict[str, Any]:
         },
         "support": indicators.support,
         "resistance": indicators.resistance,
+        "quantum_model": quantum_model,
         "charts": chart_series,
         **opportunity,
         "disclaimer": "For research and educational purposes only. Not financial advice.",
